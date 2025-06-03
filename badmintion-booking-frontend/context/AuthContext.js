@@ -1,0 +1,1 @@
+// quản lý trạng thái toàn cục (Authcontext, ....)
