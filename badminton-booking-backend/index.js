@@ -12,7 +12,7 @@ dotenv.config();
 const server = express();
 
 // Middleware parse JSON
-app.use(cors());
+server.use(cors());
 server.use(express.json());
 
 // MongoDB Connection
