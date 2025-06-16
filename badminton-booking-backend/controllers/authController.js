@@ -1,6 +1,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 
 // Register a new user
 exports.register = async (req, res) => {
@@ -66,5 +67,56 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email không tồn tại" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 tiếng
+    await user.save();
+
+    const resetUrl = `http://localhost:3000/reset-password/${token}`; // frontend
+    const message = `Click vào link để đặt lại mật khẩu: ${resetUrl}`;
+
+    await sendEmail(user.email, "Đặt lại mật khẩu", message);
+
+    res.status(200).json({ message: "Email khôi phục đã được gửi." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user)
+      return res
+        .status(400)
+        .json({ message: "Token không hợp lệ hoặc đã hết hạn." });
+
+    user.password = password; // nhớ hash nếu dùng bcrypt
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
+  } catch (err) {
+    res.status(500).json({ message: "Lỗi server." });
   }
 };
