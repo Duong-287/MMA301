@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
-const verifyToken = require("./middleware/auth.middleware");
+const {verifyToken, isAdmin, isOwner, isCustomer} = require("./middleware/auth.middleware");
 require("dotenv").config();
 
 const app = express();
@@ -14,18 +14,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // Đăng ký các route public
-app.use("/grounds", require("./routes/ground.routes"));
+app.use("/grounds", require("./routes/ground.routes.js"));
 app.use("/auth", require("./routes/auth.routes"));
 
-// Đăng ký các route
-app.use("/admin", verifyToken, require("./routes/admin.routes"));
-app.use("/owner", verifyToken, require("./routes/owner.routes"));
-app.use("/customer", verifyToken, require("./routes/customer.routes"));
+// Đăng ký các route cần xác thực
+app.use("/admin", verifyToken, isAdmin, require("./routes/admin.routes"));
+app.use("/owner", verifyToken, isOwner, require("./routes/owner.routes"));
+app.use("/customer", verifyToken, isCustomer, require("./routes/customer.routes"));
 
-// ✅ Chặn truy cập Dashboard nếu chưa đăng nhập
-app.get("/dashboard", verifyToken, (req, res) => {
-    res.json({ message: "Welcome to the Dashboard!", user: req.user });
-})
 // Xử lý lỗi 404 mà không cần `http-errors`
 app.use((req, res, next) => {
     res.status(404).json({
