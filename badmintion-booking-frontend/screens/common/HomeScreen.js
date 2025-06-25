@@ -13,7 +13,7 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const SportsBookingApp = () => {
+const HomeScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
@@ -659,4 +659,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SportsBookingApp;
+export default HomeScreen;
