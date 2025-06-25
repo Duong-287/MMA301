@@ -1,5 +1,19 @@
 const express = require("express");
 const router = express.Router();
+const { depositMoney, withdrawMoney, getWallet } = require("../controllers/WalletController");
+const { getAllGrounds, createGround, updateGround, deleteGround } = require("../controllers/GroundController");
+const { getBookingHistory, getBookingById } = require("../controllers/BookingController");
+const { getInformation } = require("../controllers/UserController");
 
-router.get("/profile", )
+router.get("/profile", getInformation)
+router.get("/wallet", getWallet)
+router.post("/wallet/deposit", depositMoney)
+router.post("/wallet/withdraw", withdrawMoney)
+router.get("/grounds", getAllGrounds)
+router.post("/grounds", createGround)
+router.put("/grounds/:id", updateGround)
+router.delete("/grounds/:id", deleteGround)
+router.get("/bookings", getBookingHistory)
+router.get("/bookings/:id", getBookingById) 
+
 module.exports = router;
