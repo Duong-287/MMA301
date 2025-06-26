@@ -2,15 +2,30 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const { log } = require("console");
 
 // Register a new user
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone, role } = req.body;
+    const { username, fullName, email, password, phone, role, address } = req.body;
+    // Kiểm tra dữ liệu đầu vào
+    if (!username || !email || !password || !fullName || !role) {
+      return res.status(400).json({ message: "Please fill in all information" });
+    }
+    // Kiểm tra role hợp lệ
+    const validRoles = ["customer", "owner", "admin"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+    // Kiểm tra username tồn tại
+    const userExistUsername = await User.find({ "username": username });
 
+    if (userExistUsername.length > 0) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
     // Check email tồn tại
     const userExist = await User.findOne({ email });
-    if (userExist) return res.status(400).json({ message: "Email đã tồn tại" });
+    if (userExist) return res.status(400).json({ message: "Email already exists" });
 
     // Mã hóa password
     const salt = await bcrypt.genSalt(10);
@@ -18,18 +33,20 @@ exports.register = async (req, res) => {
 
     // Tạo user mới
     const Users = new User({
-      name,
-      email,
+      username,
       password: hashedPassword,
-      phone,
+      email,
       role,
+      fullName,
+      phone,
+      address,
     });
 
     await Users.save();
 
-    res.status(201).json({ message: "Đăng ký thành công", Users });
+    res.status(201).json({Users});
   } catch (err) {
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    res.status(500).json({ message: "Server error: ", error: err.message });
   }
 };
 
@@ -39,11 +56,11 @@ exports.login = async (req, res) => {
 
     // Tìm user
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Email không tồn tại" });
+    if (!user) return res.status(400).json({ message: "Email not found" });
 
     // So sánh password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Mật khẩu sai" });
+    if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
 
     // Tạo token
     const token = jwt.sign(
@@ -55,18 +72,18 @@ exports.login = async (req, res) => {
     );
 
     res.status(200).json({
-      message: "Đăng nhập thành công",
+      message: "Login successful",
       token,
       user: {
         id: user._id,
-        name: user.name,
+        name: user.fullName,
         email: user.email,
         phone: user.phone,
         role: user.role,
       },
     });
   } catch (err) {
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
@@ -75,7 +92,7 @@ exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Email không tồn tại" });
+      return res.status(404).json({ message: "Email not found" });
     }
 
     const token = crypto.randomBytes(32).toString("hex");
