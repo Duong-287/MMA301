@@ -13,15 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Feather from 'react-native-vector-icons/Feather';
-
-const Icon = ({ name, size = 20, color = "#666" }) => (
-  <View style={[styles.iconPlaceholder, { width: size, height: size }]}>
-    <Text style={{ color, fontSize: size * 0.6 }}>
-      {name.charAt(0).toUpperCase()}
-    </Text>
-  </View>
-);
+import Feather from "react-native-vector-icons/Feather";
 
 const { width, height } = Dimensions.get("window");
 
@@ -190,7 +182,7 @@ export default function LoginScreen() {
     <View style={styles.formContainer}>
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Feather  name="mail" size={20} color="#6B7280" />
+          <Feather name="mail" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -233,7 +225,7 @@ export default function LoginScreen() {
           onPress={() => setRememberMe(!rememberMe)}
         >
           <View style={[styles.checkbox, rememberMe && styles.checkedBox]}>
-            {rememberMe && <Icon name="check" size={12} color="#fff" />}
+            {rememberMe && <Feather name="check" size={12} color="#fff" />}
           </View>
           <Text style={styles.rememberText}>Ghi nhớ đăng nhập</Text>
         </TouchableOpacity>

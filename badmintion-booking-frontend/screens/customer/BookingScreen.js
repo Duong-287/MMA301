@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,30 +9,25 @@ import {
   Dimensions,
   StatusBar,
   Alert,
-} from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Feather from "react-native-vector-icons/Feather";
 
-// Mock icons - trong thực tế bạn sẽ sử dụng react-native-vector-icons
-const Icon = ({ name, size = 20, color = "#666" }) => (
-  <View style={[styles.iconPlaceholder, { width: size, height: size }]}>
-    <Text style={{ color, fontSize: size * 0.6 }}>{name.charAt(0).toUpperCase()}</Text>
-  </View>
-)
-
-const { width } = Dimensions.get("window")
+const { width } = Dimensions.get("window");
 
 export default function BookingScreen() {
-  const [selectedDate, setSelectedDate] = useState(new Date())
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null)
-  const [selectedCourt, setSelectedCourt] = useState(null)
-  const [selectedDuration, setSelectedDuration] = useState(90) // minutes
-  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [selectedCourt, setSelectedCourt] = useState(null);
+  const [selectedDuration, setSelectedDuration] = useState(90); // minutes
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     playerName: "Nguyễn Văn An",
     phone: "0123 456 789",
     email: "nguyenvanan@email.com",
     note: "",
-  })
+  });
 
   // Mock data - trong thực tế sẽ fetch từ API
   const courts = [
@@ -42,7 +37,7 @@ export default function BookingScreen() {
     { id: 4, name: "Sân B2", type: "Sân đôi", price: 100000, available: true },
     { id: 5, name: "Sân C1", type: "Sân VIP", price: 150000, available: true },
     { id: 6, name: "Sân C2", type: "Sân VIP", price: 150000, available: true },
-  ]
+  ];
 
   const timeSlots = [
     { id: 1, time: "06:00", available: true, peak: false },
@@ -56,113 +51,125 @@ export default function BookingScreen() {
     { id: 9, time: "18:00", available: true, peak: true },
     { id: 10, time: "19:30", available: false, peak: true },
     { id: 11, time: "21:00", available: true, peak: true },
-  ]
+  ];
 
   const durations = [
     { value: 60, label: "1 giờ", multiplier: 0.7 },
     { value: 90, label: "1.5 giờ", multiplier: 1.0 },
     { value: 120, label: "2 giờ", multiplier: 1.8 },
-  ]
+  ];
 
   // Generate calendar dates
   const generateCalendarDates = () => {
-    const dates = []
-    const today = new Date()
+    const dates = [];
+    const today = new Date();
 
     for (let i = 0; i < 14; i++) {
-      const date = new Date(today)
-      date.setDate(today.getDate() + i)
-      dates.push(date)
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date);
     }
-    return dates
-  }
+    return dates;
+  };
 
-  const calendarDates = generateCalendarDates()
+  const calendarDates = generateCalendarDates();
 
   const formatDate = (date) => {
-    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
     return {
       day: days[date.getDay()],
       date: date.getDate(),
       month: date.getMonth() + 1,
       fullDate: date.toLocaleDateString("vi-VN"),
-    }
-  }
+    };
+  };
 
   const calculateTotalPrice = () => {
-    if (!selectedCourt || !selectedTimeSlot) return 0
+    if (!selectedCourt || !selectedTimeSlot) return 0;
 
-    const court = courts.find((c) => c.id === selectedCourt)
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot)
-    const duration = durations.find((d) => d.value === selectedDuration)
+    const court = courts.find((c) => c.id === selectedCourt);
+    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
+    const duration = durations.find((d) => d.value === selectedDuration);
 
-    if (!court || !timeSlot || !duration) return 0
+    if (!court || !timeSlot || !duration) return 0;
 
-    let basePrice = court.price * duration.multiplier
+    let basePrice = court.price * duration.multiplier;
 
     // Peak hour surcharge
     if (timeSlot.peak) {
-      basePrice *= 1.2
+      basePrice *= 1.2;
     }
 
-    return Math.round(basePrice)
-  }
+    return Math.round(basePrice);
+  };
 
   const handleBooking = () => {
     if (!selectedDate || !selectedTimeSlot || !selectedCourt) {
-      Alert.alert("Thông báo", "Vui lòng chọn đầy đủ thông tin đặt sân!")
-      return
+      Alert.alert("Thông báo", "Vui lòng chọn đầy đủ thông tin đặt sân!");
+      return;
     }
 
     if (!bookingForm.playerName || !bookingForm.phone) {
-      Alert.alert("Thông báo", "Vui lòng điền đầy đủ thông tin liên hệ!")
-      return
+      Alert.alert("Thông báo", "Vui lòng điền đầy đủ thông tin liên hệ!");
+      return;
     }
 
-    const court = courts.find((c) => c.id === selectedCourt)
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot)
-    const totalPrice = calculateTotalPrice()
+    const court = courts.find((c) => c.id === selectedCourt);
+    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
+    const totalPrice = calculateTotalPrice();
 
     Alert.alert(
       "Xác nhận đặt sân",
-      `Sân: ${court.name}\nNgày: ${formatDate(selectedDate).fullDate}\nGiờ: ${timeSlot.time}\nThời gian: ${selectedDuration} phút\nTổng tiền: ${totalPrice.toLocaleString("vi-VN")}đ\n\nBạn có muốn xác nhận đặt sân?`,
+      `Sân: ${court.name}\nNgày: ${formatDate(selectedDate).fullDate}\nGiờ: ${
+        timeSlot.time
+      }\nThời gian: ${selectedDuration} phút\nTổng tiền: ${totalPrice.toLocaleString(
+        "vi-VN"
+      )}đ\n\nBạn có muốn xác nhận đặt sân?`,
       [
         { text: "Hủy", style: "cancel" },
         {
           text: "Xác nhận",
           onPress: () => {
-            Alert.alert("Thành công", "Đặt sân thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất.")
+            Alert.alert(
+              "Thành công",
+              "Đặt sân thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất."
+            );
             // Reset form
-            setSelectedTimeSlot(null)
-            setSelectedCourt(null)
+            setSelectedTimeSlot(null);
+            setSelectedCourt(null);
           },
         },
-      ],
-    )
-  }
+      ]
+    );
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
       <TouchableOpacity style={styles.backButton}>
-        <Icon name="back" size={24} color="#111827" />
+        <Feather name="arrow-left" size={24} color="#111827" />
       </TouchableOpacity>
       <Text style={styles.headerTitle}>Đặt sân cầu lông</Text>
       <View style={styles.headerRight} />
     </View>
-  )
+  );
 
   const renderCalendar = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Icon name="calendar" size={20} color="#10B981" />
+        <Feather name="calendar" size={20} color="#10B981" />
         <Text style={styles.sectionTitle}>Chọn ngày</Text>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.calendarScroll}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.calendarScroll}
+      >
         {calendarDates.map((date, index) => {
-          const dateInfo = formatDate(date)
-          const isSelected = selectedDate.toDateString() === date.toDateString()
-          const isToday = new Date().toDateString() === date.toDateString()
+          const dateInfo = formatDate(date);
+          const isSelected =
+            selectedDate.toDateString() === date.toDateString();
+          const isToday = new Date().toDateString() === date.toDateString();
 
           return (
             <TouchableOpacity
@@ -202,16 +209,16 @@ export default function BookingScreen() {
                 T{dateInfo.month}
               </Text>
             </TouchableOpacity>
-          )
+          );
         })}
       </ScrollView>
     </View>
-  )
+  );
 
   const renderTimeSlots = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Icon name="clock" size={20} color="#3B82F6" />
+        <Feather name="clock" size={20} color="#3B82F6" />
         <Text style={styles.sectionTitle}>Chọn giờ chơi</Text>
       </View>
 
@@ -237,17 +244,19 @@ export default function BookingScreen() {
             >
               {slot.time}
             </Text>
-            {slot.peak && slot.available && <Text style={styles.peakLabel}>Giờ cao điểm</Text>}
+            {slot.peak && slot.available && (
+              <Text style={styles.peakLabel}>Giờ cao điểm</Text>
+            )}
           </TouchableOpacity>
         ))}
       </View>
     </View>
-  )
+  );
 
   const renderDuration = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Icon name="timer" size={20} color="#F59E0B" />
+        <Feather name="watch" size={20} color="#F59E0B" />
         <Text style={styles.sectionTitle}>Thời gian chơi</Text>
       </View>
 
@@ -255,22 +264,32 @@ export default function BookingScreen() {
         {durations.map((duration) => (
           <TouchableOpacity
             key={duration.value}
-            style={[styles.durationCard, selectedDuration === duration.value && styles.selectedDurationCard]}
+            style={[
+              styles.durationCard,
+              selectedDuration === duration.value &&
+                styles.selectedDurationCard,
+            ]}
             onPress={() => setSelectedDuration(duration.value)}
           >
-            <Text style={[styles.durationText, selectedDuration === duration.value && styles.selectedDurationText]}>
+            <Text
+              style={[
+                styles.durationText,
+                selectedDuration === duration.value &&
+                  styles.selectedDurationText,
+              ]}
+            >
               {duration.label}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
     </View>
-  )
+  );
 
   const renderCourts = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Icon name="court" size={20} color="#8B5CF6" />
+        <Feather name="grid" size={20} color="#8B5CF6" />
         <Text style={styles.sectionTitle}>Chọn sân</Text>
       </View>
 
@@ -324,19 +343,19 @@ export default function BookingScreen() {
 
             {selectedCourt === court.id && (
               <View style={styles.selectedBadge}>
-                <Icon name="check" size={16} color="#fff" />
+                <Feather name="check" size={16} color="#fff" />
               </View>
             )}
           </TouchableOpacity>
         ))}
       </View>
     </View>
-  )
+  );
 
   const renderBookingForm = () => (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <Icon name="user" size={20} color="#EF4444" />
+        <Feather name="user" size={20} color="#EF4444" />
         <Text style={styles.sectionTitle}>Thông tin đặt sân</Text>
       </View>
 
@@ -346,7 +365,9 @@ export default function BookingScreen() {
           <TextInput
             style={styles.input}
             value={bookingForm.playerName}
-            onChangeText={(text) => setBookingForm((prev) => ({ ...prev, playerName: text }))}
+            onChangeText={(text) =>
+              setBookingForm((prev) => ({ ...prev, playerName: text }))
+            }
             placeholder="Nhập họ và tên"
           />
         </View>
@@ -356,7 +377,9 @@ export default function BookingScreen() {
           <TextInput
             style={styles.input}
             value={bookingForm.phone}
-            onChangeText={(text) => setBookingForm((prev) => ({ ...prev, phone: text }))}
+            onChangeText={(text) =>
+              setBookingForm((prev) => ({ ...prev, phone: text }))
+            }
             placeholder="Nhập số điện thoại"
             keyboardType="phone-pad"
           />
@@ -367,7 +390,9 @@ export default function BookingScreen() {
           <TextInput
             style={styles.input}
             value={bookingForm.email}
-            onChangeText={(text) => setBookingForm((prev) => ({ ...prev, email: text }))}
+            onChangeText={(text) =>
+              setBookingForm((prev) => ({ ...prev, email: text }))
+            }
             placeholder="Nhập email"
             keyboardType="email-address"
           />
@@ -378,7 +403,9 @@ export default function BookingScreen() {
           <TextInput
             style={[styles.input, styles.textArea]}
             value={bookingForm.note}
-            onChangeText={(text) => setBookingForm((prev) => ({ ...prev, note: text }))}
+            onChangeText={(text) =>
+              setBookingForm((prev) => ({ ...prev, note: text }))
+            }
             placeholder="Ghi chú thêm (tùy chọn)"
             multiline
             numberOfLines={3}
@@ -386,19 +413,19 @@ export default function BookingScreen() {
         </View>
       </View>
     </View>
-  )
+  );
 
   const renderSummary = () => {
-    const totalPrice = calculateTotalPrice()
-    const court = courts.find((c) => c.id === selectedCourt)
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot)
+    const totalPrice = calculateTotalPrice();
+    const court = courts.find((c) => c.id === selectedCourt);
+    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
 
-    if (!court || !timeSlot) return null
+    if (!court || !timeSlot) return null;
 
     return (
       <View style={styles.summarySection}>
         <View style={styles.summaryHeader}>
-          <Icon name="receipt" size={20} color="#10B981" />
+          <Feather name="file-text" size={20} color="#10B981" />
           <Text style={styles.summaryTitle}>Tóm tắt đặt sân</Text>
         </View>
 
@@ -412,7 +439,9 @@ export default function BookingScreen() {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Ngày:</Text>
-            <Text style={styles.summaryValue}>{formatDate(selectedDate).fullDate}</Text>
+            <Text style={styles.summaryValue}>
+              {formatDate(selectedDate).fullDate}
+            </Text>
           </View>
 
           <View style={styles.summaryRow}>
@@ -434,52 +463,61 @@ export default function BookingScreen() {
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Tổng tiền:</Text>
-            <Text style={styles.totalValue}>{totalPrice.toLocaleString("vi-VN")}đ</Text>
+            <Text style={styles.totalValue}>
+              {totalPrice.toLocaleString("vi-VN")}đ
+            </Text>
           </View>
         </View>
       </View>
-    )
-  }
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-
-      {renderHeader()}
-
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {renderCalendar()}
-        {renderTimeSlots()}
-        {renderDuration()}
-        {renderCourts()}
-        {renderBookingForm()}
-        {renderSummary()}
-
-        <View style={styles.bottomPadding} />
-      </ScrollView>
-
-      <View style={styles.bottomBar}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Tổng tiền:</Text>
-          <Text style={styles.priceValue}>{calculateTotalPrice().toLocaleString("vi-VN")}đ</Text>
-        </View>
-
-        <TouchableOpacity
-          style={[
-            styles.bookButton,
-            (!selectedDate || !selectedTimeSlot || !selectedCourt) && styles.disabledBookButton,
-          ]}
-          onPress={handleBooking}
-          disabled={!selectedDate || !selectedTimeSlot || !selectedCourt}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+      <View style={styles.container}>
+        {renderHeader()}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.bookButtonText}>Đặt sân ngay</Text>
-        </TouchableOpacity>
+          {renderCalendar()}
+          {renderTimeSlots()}
+          {renderDuration()}
+          {renderCourts()}
+          {renderBookingForm()}
+          {renderSummary()}
+          <View style={styles.bottomPadding} />
+        </ScrollView>
+        <View style={styles.bottomBar}>
+          <View style={styles.priceContainer}>
+            <Text style={styles.priceLabel}>Tổng tiền:</Text>
+            <Text style={styles.priceValue}>
+              {calculateTotalPrice().toLocaleString("vi-VN")}đ
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[
+              styles.bookButton,
+              (!selectedDate || !selectedTimeSlot || !selectedCourt) &&
+                styles.disabledBookButton,
+            ]}
+            onPress={handleBooking}
+            disabled={!selectedDate || !selectedTimeSlot || !selectedCourt}
+          >
+            <Text style={styles.bookButtonText}>Đặt sân ngay</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F9FAFB",
+  },
   container: {
     flex: 1,
     backgroundColor: "#F9FAFB",
@@ -845,4 +883,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-})
+});

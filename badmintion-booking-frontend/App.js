@@ -18,8 +18,8 @@ export default function App() {
         <View style={styles.container}>
           {/* <HomeScreen /> */}
           {/* <ProfileScreen /> */}
-          {/* <BookingScreen /> */}
-          <LoginScreen />
+          <BookingScreen />
+          {/* <LoginScreen /> */}
         </View>
         <StatusBar style="auto" />
       </SafeAreaView>
