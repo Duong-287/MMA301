@@ -5,7 +5,7 @@ const courtSchema = new Schema({
   name: { type: String, required: true },
   ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   address: { type: String, required: true },
-  startTime: { type: String, required: true }, // hoặc Number nếu muốn dễ so sánh
+  startTime: { type: String, required: true }, 
   endTime: { type: String, required: true },
   pricePerHour: { type: Number, required: true, min: 0 },
   serviceFee: { type: Number, required: true, min: 0 },
@@ -14,7 +14,7 @@ const courtSchema = new Schema({
 
 courtSchema.index({ ownerId: 1 });
 courtSchema.index({ status: 1 });
-courtSchema.index({ address: 1 }); // hoặc text nếu search keyword
+courtSchema.index({ address: 1 }); 
 
 const Court = mongoose.model('Court', courtSchema, 'courts');
 module.exports = Court;
