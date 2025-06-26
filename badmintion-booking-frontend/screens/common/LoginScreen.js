@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Feather from 'react-native-vector-icons/Feather';
 
 const Icon = ({ name, size = 20, color = "#666" }) => (
   <View style={[styles.iconPlaceholder, { width: size, height: size }]}>
@@ -189,7 +190,7 @@ export default function LoginScreen() {
     <View style={styles.formContainer}>
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="mail" size={20} color="#6B7280" />
+          <Feather  name="mail" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -204,7 +205,7 @@ export default function LoginScreen() {
 
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="lock" size={20} color="#6B7280" />
+          <Feather name="lock" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Mật khẩu"
@@ -217,7 +218,7 @@ export default function LoginScreen() {
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeButton}
           >
-            <Icon
+            <Feather
               name={showPassword ? "eye-off" : "eye"}
               size={20}
               color="#6B7280"
@@ -248,7 +249,7 @@ export default function LoginScreen() {
     <View style={styles.formContainer}>
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="user" size={20} color="#6B7280" />
+          <Feather name="user" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Họ và tên"
@@ -261,7 +262,7 @@ export default function LoginScreen() {
 
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="mail" size={20} color="#6B7280" />
+          <Feather name="mail" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -276,7 +277,7 @@ export default function LoginScreen() {
 
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="phone" size={20} color="#6B7280" />
+          <Feather name="phone" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Số điện thoại"
@@ -289,7 +290,7 @@ export default function LoginScreen() {
 
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="lock" size={20} color="#6B7280" />
+          <Feather name="lock" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Mật khẩu"
@@ -302,7 +303,7 @@ export default function LoginScreen() {
             onPress={() => setShowPassword(!showPassword)}
             style={styles.eyeButton}
           >
-            <Icon
+            <Feather
               name={showPassword ? "eye-off" : "eye"}
               size={20}
               color="#6B7280"
@@ -313,7 +314,7 @@ export default function LoginScreen() {
 
       <View style={styles.inputContainer}>
         <View style={styles.inputWrapper}>
-          <Icon name="lock" size={20} color="#6B7280" />
+          <Feather name="lock" size={20} color="#6B7280" />
           <TextInput
             style={styles.input}
             placeholder="Xác nhận mật khẩu"
@@ -326,7 +327,7 @@ export default function LoginScreen() {
             onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             style={styles.eyeButton}
           >
-            <Icon
+            <Feather
               name={showConfirmPassword ? "eye-off" : "eye"}
               size={20}
               color="#6B7280"
