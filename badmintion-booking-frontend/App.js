@@ -4,6 +4,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import HomeScreen from "./screens/common/HomeScreen";
 import ProfileScreen from "./screens/common/ProfileScreen";
 import BookingScreen from "./screens/customer/BookingScreen";
+import LoginScreen from "./screens/common/LoginScreen";
 
 // import RegisterScreen from "./screens/common/RegisterScreens";
 
@@ -17,7 +18,8 @@ export default function App() {
         <View style={styles.container}>
           {/* <HomeScreen /> */}
           {/* <ProfileScreen /> */}
-          <BookingScreen />
+          {/* <BookingScreen /> */}
+          <LoginScreen />
         </View>
         <StatusBar style="auto" />
       </SafeAreaView>
