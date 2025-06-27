@@ -16,4 +16,5 @@ userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 
 const User = mongoose.model('User', userSchema, 'users');
+
 module.exports = User;
