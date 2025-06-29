@@ -10,10 +10,11 @@ import {
   SafeAreaView,
   Dimensions,
 } from "react-native";
-
+import { useNavigation } from "@react-navigation/native";
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -71,7 +72,10 @@ const HomeScreen = () => {
           </View>
 
           <View style={styles.authButtonsContainer}>
-            <TouchableOpacity style={styles.loginBtn}>
+            <TouchableOpacity
+              style={styles.loginBtn}
+              onPress={() => navigation.navigate("Login")}
+            >
               <Text style={styles.loginBtnText}>Đăng nhập</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.registerBtn}>

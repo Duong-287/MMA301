@@ -4,28 +4,39 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { log } = require("console");
 
-// Register a new user
+
 exports.register = async (req, res) => {
   try {
-    const { username, fullName, email, password, phone, role, address } = req.body;
+    const { username, fullName, email, password, phone, address } = req.body;
+    let { role } = req.body;
+
+    // Gán mặc định role là "customer" nếu không được gửi lên
+    if (!role) {
+      role = "customer";
+    }
+
     // Kiểm tra dữ liệu đầu vào
-    if (!username || !email || !password || !fullName || !role) {
+    if (!username || !email || !password || !fullName) {
       return res.status(400).json({ message: "Please fill in all information" });
     }
+
     // Kiểm tra role hợp lệ
     const validRoles = ["customer", "owner", "admin"];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
-    // Kiểm tra username tồn tại
-    const userExistUsername = await User.find({ "username": username });
 
+    // Kiểm tra username tồn tại
+    const userExistUsername = await User.find({ username });
     if (userExistUsername.length > 0) {
       return res.status(400).json({ message: "Username already exists" });
     }
-    // Check email tồn tại
+
+    // Kiểm tra email tồn tại
     const userExist = await User.findOne({ email });
-    if (userExist) return res.status(400).json({ message: "Email already exists" });
+    if (userExist) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 
     // Mã hóa password
     const salt = await bcrypt.genSalt(10);
@@ -44,9 +55,9 @@ exports.register = async (req, res) => {
 
     await Users.save();
 
-    res.status(201).json({Users});
+    res.status(201).json({ Users });
   } catch (err) {
-    res.status(500).json({ message: "Server error: ", error: err.message });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };
 
