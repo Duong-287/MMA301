@@ -11,6 +11,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import BottomNavigation from "../../components/BottomNavigation";
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
@@ -328,30 +329,7 @@ const HomeScreen = () => {
       </ScrollView>
 
       {/* Enhanced Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <View style={styles.navIndicator} />
-        <View style={styles.navContainer}>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navItemActive}>
-              <Text style={styles.navIconActive}>🏠</Text>
-              <View style={styles.navActiveGlow} />
-            </View>
-            <Text style={styles.navTextActive}>Trang chủ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>🗺️</Text>
-            <Text style={styles.navText}>Bản đồ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>⭐</Text>
-            <Text style={styles.navText}>Nổi bật</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>👤</Text>
-            <Text style={styles.navText}>Tài khoản</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BottomNavigation activeTab="Tài khoản" />
     </SafeAreaView>
   );
 };

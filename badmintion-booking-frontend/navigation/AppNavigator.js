@@ -3,6 +3,7 @@ import LoginScreen from "../screens/common/LoginScreen";
 import HomeScreen from "../screens/common/HomeScreen";
 import BookingScreen from "../screens/customer/BookingScreen";
 import ProfileScreen from "../screens/common/ProfileScreen";
+import AccountScreen from "../screens/common/AccountScreen";
 
 const Stack = createStackNavigator();
 
@@ -17,6 +18,7 @@ const AppNavigator = () => (
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Booking" component={BookingScreen} />
     <Stack.Screen name="Profile" component={ProfileScreen} />
+    <Stack.Screen name="Account" component={AccountScreen} />
   </Stack.Navigator>
 );
 
