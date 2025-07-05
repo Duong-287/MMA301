@@ -88,8 +88,16 @@ export default function LoginScreen() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-        setUser(result.user);
-        navigation.navigate("Home");
+        const user = result.user;
+        setUser(user);
+        if (user.role === "admin") {
+          navigation.navigate("AdminDashboard");
+        } else if (user.role === "customer") {
+          navigation.navigate("Home");
+        } else {
+          Alert.alert("Lỗi", "Vai trò người dùng không hợp lệ!");
+          return;
+        }
       } else {
         // Gọi API đăng ký ở đây (chưa có)
         // TODO: viết hàm register và xử lý tương tự
