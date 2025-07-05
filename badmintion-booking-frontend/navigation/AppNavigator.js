@@ -11,7 +11,7 @@ const Stack = createStackNavigator();
 
 const AppNavigator = () => (
   <Stack.Navigator
-    initialRouteName="AdminDashboard"
+    initialRouteName="Home"
     screenOptions={{
       headerShown: false,
     }}

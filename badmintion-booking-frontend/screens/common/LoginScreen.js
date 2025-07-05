@@ -15,11 +15,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
+import { login } from "../../services/auth";
 
 const { width, height } = Dimensions.get("window");
 
 export default function LoginScreen() {
-  const [isLogin, setIsLogin] = useState(true); // true = Login, false = Register
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -82,20 +83,21 @@ export default function LoginScreen() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
       if (isLogin) {
+        const result = await login(formData.email, formData.password);
+
         Alert.alert("Thành công", "Đăng nhập thành công!", [
           {
             text: "OK",
             onPress: () => {
-              // Navigate to main app
-              console.log("Navigate to main app");
+              navigation.navigate("Home");
             },
           },
         ]);
       } else {
+        // Gọi API đăng ký ở đây (chưa có)
+        // TODO: viết hàm register và xử lý tương tự
         Alert.alert("Thành công", "Đăng ký thành công! Vui lòng đăng nhập.", [
           {
             text: "OK",
@@ -112,7 +114,11 @@ export default function LoginScreen() {
           },
         ]);
       }
-    }, 2000);
+    } catch (error) {
+      Alert.alert("Lỗi", error.message || "Đã có lỗi xảy ra");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider) => {
