@@ -1,4 +1,7 @@
 import React from "react";
+import { useEffect, useState } from "react";
+import moment from "moment";
+import "moment/locale/vi";
 import {
   View,
   Text,
@@ -10,10 +13,30 @@ import {
   SafeAreaView,
   Dimensions,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import BottomNavigation from "../../components/BottomNavigation";
+import { useAuth } from "../../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
+  const navigation = useNavigation();
+  const { user } = useAuth();
+  const [currentDate, setCurrentDate] = useState("");
+
+  if (user) {
+    console.log("Đã đăng nhập:", user);
+  } else {
+    console.log("Chưa đăng nhập");
+  }
+
+  useEffect(() => {
+    moment.locale("vi");
+    const now = moment();
+    const formatted = now.format("dddd, DD/MM/YYYY");
+    setCurrentDate(formatted);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -66,19 +89,32 @@ const HomeScreen = () => {
             </View>
             <View>
               <Text style={styles.appName}>ALOBO</Text>
-              <Text style={styles.dateText}>Thứ hai, 23/06/2025</Text>
+              <Text style={styles.dateText}>{currentDate}</Text>
             </View>
           </View>
 
-          <View style={styles.authButtonsContainer}>
-            <TouchableOpacity style={styles.loginBtn}>
-              <Text style={styles.loginBtnText}>Đăng nhập</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.registerBtn}>
-              <Text style={styles.registerBtnText}>Đăng ký</Text>
-              <View style={styles.buttonShine} />
-            </TouchableOpacity>
-          </View>
+          {user ? (
+            <View style={{ marginTop: 10 }}>
+              <Text
+                style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
+              >
+                Xin chào, {user.name} 👋
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.authButtonsContainer}>
+              <TouchableOpacity
+                style={styles.loginBtn}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.loginBtnText}>Đăng nhập</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.registerBtn}>
+                <Text style={styles.registerBtnText}>Đăng ký</Text>
+                <View style={styles.buttonShine} />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </View>
 
@@ -324,30 +360,7 @@ const HomeScreen = () => {
       </ScrollView>
 
       {/* Enhanced Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <View style={styles.navIndicator} />
-        <View style={styles.navContainer}>
-          <TouchableOpacity style={styles.navItem}>
-            <View style={styles.navItemActive}>
-              <Text style={styles.navIconActive}>🏠</Text>
-              <View style={styles.navActiveGlow} />
-            </View>
-            <Text style={styles.navTextActive}>Trang chủ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>🗺️</Text>
-            <Text style={styles.navText}>Bản đồ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>⭐</Text>
-            <Text style={styles.navText}>Nổi bật</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>👤</Text>
-            <Text style={styles.navText}>Tài khoản</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <BottomNavigation activeTab="Tài khoản" />
     </SafeAreaView>
   );
 };

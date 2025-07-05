@@ -14,11 +14,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
-
+import BottomNavigation from "../../components/BottomNavigation";
+import { login } from "../../services/auth";
+import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
-  const [isLogin, setIsLogin] = useState(true); // true = Login, false = Register
+  const navigation = useNavigation();
+  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -30,7 +34,7 @@ export default function LoginScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
+  const { setUser } = useAuth();
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -81,20 +85,14 @@ export default function LoginScreen() {
 
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
       if (isLogin) {
-        Alert.alert("Thành công", "Đăng nhập thành công!", [
-          {
-            text: "OK",
-            onPress: () => {
-              // Navigate to main app
-              console.log("Navigate to main app");
-            },
-          },
-        ]);
+        const result = await login(formData.email, formData.password);
+        setUser(result.user);
+        navigation.navigate("Home");
       } else {
+        // Gọi API đăng ký ở đây (chưa có)
+        // TODO: viết hàm register và xử lý tương tự
         Alert.alert("Thành công", "Đăng ký thành công! Vui lòng đăng nhập.", [
           {
             text: "OK",
@@ -111,7 +109,11 @@ export default function LoginScreen() {
           },
         ]);
       }
-    }, 2000);
+    } catch (error) {
+      Alert.alert("Lỗi", error.message || "Đã có lỗi xảy ra");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider) => {
@@ -415,6 +417,7 @@ export default function LoginScreen() {
           {renderFooter()}
         </ScrollView>
       </KeyboardAvoidingView>
+      <BottomNavigation activeTab="Tài khoản" />
     </SafeAreaView>
   );
 }
