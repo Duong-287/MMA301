@@ -4,10 +4,9 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { log } = require("console");
 
-
 exports.register = async (req, res) => {
   try {
-    const { username, fullName, email, password, phone, address } = req.body;
+    const { fullName, email, password, phone, address, image } = req.body;
     let { role } = req.body;
 
     // Gán mặc định role là "customer" nếu không được gửi lên
@@ -16,20 +15,16 @@ exports.register = async (req, res) => {
     }
 
     // Kiểm tra dữ liệu đầu vào
-    if (!username || !email || !password || !fullName) {
-      return res.status(400).json({ message: "Please fill in all information" });
+    if (!email || !password || !fullName) {
+      return res
+        .status(400)
+        .json({ message: "Please fill in all information" });
     }
 
     // Kiểm tra role hợp lệ
     const validRoles = ["customer", "owner", "admin"];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
-    }
-
-    // Kiểm tra username tồn tại
-    const userExistUsername = await User.find({ username });
-    if (userExistUsername.length > 0) {
-      return res.status(400).json({ message: "Username already exists" });
     }
 
     // Kiểm tra email tồn tại
@@ -44,13 +39,13 @@ exports.register = async (req, res) => {
 
     // Tạo user mới
     const Users = new User({
-      username,
       password: hashedPassword,
       email,
       role,
       fullName,
       phone,
       address,
+      image,
     });
 
     await Users.save();
@@ -71,7 +66,8 @@ exports.login = async (req, res) => {
 
     // So sánh password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
+    if (!isMatch)
+      return res.status(400).json({ message: "Incorrect password" });
 
     // Tạo token
     const token = jwt.sign(
