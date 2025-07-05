@@ -16,10 +16,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
 import { login } from "../../services/auth";
-
+import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
+  const navigation = useNavigation();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
@@ -32,7 +34,7 @@ export default function LoginScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
+  const { setUser } = useAuth();
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -86,15 +88,8 @@ export default function LoginScreen() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-
-        Alert.alert("Thành công", "Đăng nhập thành công!", [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.navigate("Home");
-            },
-          },
-        ]);
+        setUser(result.user);
+        navigation.navigate("Home");
       } else {
         // Gọi API đăng ký ở đây (chưa có)
         // TODO: viết hàm register và xử lý tương tự
