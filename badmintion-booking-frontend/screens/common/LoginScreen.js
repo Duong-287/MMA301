@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client";
+
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,23 +11,24 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }) => {
   const [formData, setFormData] = useState({
     phoneOrEmail: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
-  const clearInput = (field: string) => {
+  const clearInput = (field) => {
     setFormData((prev) => ({
       ...prev,
       [field]: "",
@@ -33,11 +36,66 @@ const LoginScreen = () => {
   };
 
   const handleLogin = () => {
+    if (!formData.phoneOrEmail || !formData.password) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    // Mock login logic - thay thế bằng API thực tế
     console.log("Login data:", formData);
+
+    // Giả lập phân quyền dựa trên email/phone
+    if (
+      formData.phoneOrEmail.includes("owner") ||
+      formData.phoneOrEmail.includes("chu")
+    ) {
+      // Chủ sân
+      Alert.alert("Đăng nhập thành công", "Chào mừng chủ sân!", [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "OwnerApp" }],
+            });
+          },
+        },
+      ]);
+    } else if (formData.phoneOrEmail.includes("admin")) {
+      // Admin
+      Alert.alert("Đăng nhập thành công", "Chào mừng quản trị viên!", [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "AdminApp" }],
+            });
+          },
+        },
+      ]);
+    } else {
+      // Khách hàng
+      Alert.alert("Đăng nhập thành công", "Chào mừng bạn!", [
+        {
+          text: "OK",
+          onPress: () => {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "CustomerApp" }],
+            });
+          },
+        },
+      ]);
+    }
   };
 
   const handleRegister = () => {
-    console.log("Navigate to Register");
+    navigation.navigate("Register");
+  };
+
+  const handleBackToHome = () => {
+    navigation.goBack();
   };
 
   return (
@@ -52,6 +110,18 @@ const LoginScreen = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackToHome}
+            >
+              <Text style={styles.backIcon}>←</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Đăng nhập</Text>
+            <View style={styles.placeholder} />
+          </View>
+
           <View style={styles.centerContainer}>
             {/* Form Card */}
             <View style={styles.formContainer}>
@@ -59,6 +129,17 @@ const LoginScreen = () => {
               <Text style={styles.subtitle}>
                 Chào mừng bạn quay lại với ALOBO!
               </Text>
+
+              {/* Demo accounts info */}
+              <View style={styles.demoInfo}>
+                <Text style={styles.demoTitle}>Tài khoản demo:</Text>
+                <Text style={styles.demoText}>
+                  • Khách hàng: customer@demo.com
+                </Text>
+                <Text style={styles.demoText}>• Chủ sân: owner@demo.com</Text>
+                <Text style={styles.demoText}>• Admin: admin@demo.com</Text>
+                <Text style={styles.demoText}>• Mật khẩu: 123456</Text>
+              </View>
 
               {/* Email/Phone */}
               <View style={styles.inputSection}>
@@ -137,6 +218,34 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingTop: 50,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(46, 125, 50, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backIcon: {
+    fontSize: 20,
+    color: "#2E7D32",
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2E7D32",
+  },
+  placeholder: {
+    width: 40,
+  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -166,6 +275,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#607D8B",
     marginBottom: 20,
+  },
+  demoInfo: {
+    backgroundColor: "#f0f8ff",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: "#2196F3",
+  },
+  demoTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#1976D2",
+    marginBottom: 8,
+  },
+  demoText: {
+    fontSize: 12,
+    color: "#1976D2",
+    marginBottom: 2,
   },
   inputSection: {
     marginBottom: 16,

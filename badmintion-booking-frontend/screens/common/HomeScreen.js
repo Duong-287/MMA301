@@ -1,4 +1,3 @@
-import React from "react";
 import {
   View,
   Text,
@@ -13,7 +12,23 @@ import {
 
 const { width } = Dimensions.get("window");
 
-const SportsBookingApp = () => {
+const HomeScreen = ({ navigation }) => {
+  // Hàm xử lý đăng nhập
+  const handleLogin = () => {
+    navigation.navigate("Login");
+  };
+
+  // Hàm xử lý đăng ký
+  const handleRegister = () => {
+    navigation.navigate("Register");
+  };
+
+  // Hàm xử lý đặt lịch (yêu cầu đăng nhập)
+  const handleBookCourt = (courtName) => {
+    // Kiểm tra đăng nhập - tạm thời navigate đến login
+    navigation.navigate("Login");
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
@@ -52,16 +67,19 @@ const SportsBookingApp = () => {
         <View style={styles.headerMain}>
           <View style={styles.logoSection}>
             <View style={styles.logoContainer}>
-              <Text style={styles.logoIcon}>🌿</Text>
+              <Text style={styles.logoIcon}>🏸</Text>
             </View>
             <Text style={styles.dateText}>Thứ hai, 23/06/2025</Text>
           </View>
 
           <View style={styles.authButtonsContainer}>
-            <TouchableOpacity style={styles.loginBtn}>
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
               <Text style={styles.loginBtnText}>Đăng nhập</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.registerBtn}>
+            <TouchableOpacity
+              style={styles.registerBtn}
+              onPress={handleRegister}
+            >
               <Text style={styles.registerBtnText}>Đăng ký</Text>
             </TouchableOpacity>
           </View>
@@ -78,7 +96,7 @@ const SportsBookingApp = () => {
             <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Tìm kiếm"
+              placeholder="Tìm kiếm sân cầu lông..."
               placeholderTextColor="#999"
             />
           </View>
@@ -94,13 +112,16 @@ const SportsBookingApp = () => {
           style={styles.filtersContainer}
         >
           <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Xe về gần tôi</Text>
+            <Text style={styles.filterText}>Sân gần tôi</Text>
           </View>
           <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Pickleball gần tôi</Text>
+            <Text style={styles.filterText}>Giá rẻ</Text>
           </View>
           <View style={styles.filterChip}>
-            <Text style={styles.filterText}>Cầu lông gần tôi</Text>
+            <Text style={styles.filterText}>Đánh giá cao</Text>
+          </View>
+          <View style={styles.filterChip}>
+            <Text style={styles.filterText}>Mở 24/7</Text>
           </View>
         </ScrollView>
 
@@ -111,22 +132,16 @@ const SportsBookingApp = () => {
           style={styles.sportsContainer}
         >
           <View style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#2196F3" }]}>
-              <Text style={styles.sportEmoji}>🏓</Text>
-            </View>
-            <Text style={styles.sportName}>Pickleball</Text>
-          </View>
-          <View style={styles.sportItem}>
             <View style={[styles.sportIcon, { backgroundColor: "#4CAF50" }]}>
               <Text style={styles.sportEmoji}>🏸</Text>
             </View>
             <Text style={styles.sportName}>Cầu lông</Text>
           </View>
           <View style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#4CAF50" }]}>
-              <Text style={styles.sportEmoji}>⚽</Text>
+            <View style={[styles.sportIcon, { backgroundColor: "#2196F3" }]}>
+              <Text style={styles.sportEmoji}>🏓</Text>
             </View>
-            <Text style={styles.sportName}>Bóng đá</Text>
+            <Text style={styles.sportName}>Bóng bàn</Text>
           </View>
           <View style={styles.sportItem}>
             <View style={[styles.sportIcon, { backgroundColor: "#FF9800" }]}>
@@ -135,10 +150,10 @@ const SportsBookingApp = () => {
             <Text style={styles.sportName}>Tennis</Text>
           </View>
           <View style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#FFC107" }]}>
-              <Text style={styles.sportEmoji}>🏐</Text>
+            <View style={[styles.sportIcon, { backgroundColor: "#4CAF50" }]}>
+              <Text style={styles.sportEmoji}>⚽</Text>
             </View>
-            <Text style={styles.sportName}>B.Chuyền</Text>
+            <Text style={styles.sportName}>Bóng đá</Text>
           </View>
           <View style={styles.sportItem}>
             <View style={[styles.sportIcon, { backgroundColor: "#FFC107" }]}>
@@ -150,9 +165,7 @@ const SportsBookingApp = () => {
 
         {/* Section title */}
         <View style={styles.sectionTitleContainer}>
-          <Text style={styles.sectionTitle}>
-            🌍 Bạn muốn tìm kiếm nhiều hơn
-          </Text>
+          <Text style={styles.sectionTitle}>🏸 Sân cầu lông nổi bật</Text>
           <TouchableOpacity>
             <Text style={styles.filterIcon}>⚙️</Text>
           </TouchableOpacity>
@@ -200,23 +213,16 @@ const SportsBookingApp = () => {
                 <View style={styles.venueMetaContainer}>
                   <Text style={styles.venueMeta}>🕐 06:00 - 22:00</Text>
                   <Text style={styles.venueMeta}>📞 0974857048</Text>
+                  <Text style={styles.venueMeta}>💰 80,000 VNĐ/giờ</Text>
                 </View>
-              </View>
-            </View>
-            <View style={styles.qrContainer}>
-              <View style={styles.qrCode}>
-                <View style={styles.qrPattern}>
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                </View>
-                <Text style={styles.qrText}>QR CODE</Text>
               </View>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.bookButton}>
+          <TouchableOpacity
+            style={styles.bookButton}
+            onPress={() => handleBookCourt("CLB Cầu Lông TPT Sport")}
+          >
             <Text style={styles.bookButtonText}>ĐẶT LỊCH</Text>
           </TouchableOpacity>
         </View>
@@ -264,38 +270,34 @@ const SportsBookingApp = () => {
                 <View style={styles.venueMetaContainer}>
                   <Text style={styles.venueMeta}>🕐 05:00 - 24:00</Text>
                   <Text style={styles.venueMeta}>📞 0913223333</Text>
+                  <Text style={styles.venueMeta}>💰 100,000 VNĐ/giờ</Text>
                 </View>
               </View>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.bookButton}>
+          <TouchableOpacity
+            style={styles.bookButton}
+            onPress={() => handleBookCourt("Sân Hoa Thiên Lý")}
+          >
             <Text style={styles.bookButtonText}>ĐẶT LỊCH</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
 
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <View style={styles.navContainer}>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIconActive}>🏠</Text>
-            <Text style={styles.navTextActive}>Trang chủ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>🗺️</Text>
-            <Text style={styles.navText}>Bản đồ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>📋</Text>
-            <Text style={styles.navText}>Nội bật</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navIcon}>👤</Text>
-            <Text style={styles.navText}>Tài khoản</Text>
+        {/* Login Prompt */}
+        <View style={styles.loginPrompt}>
+          <Text style={styles.loginPromptTitle}>Bạn là chủ sân?</Text>
+          <Text style={styles.loginPromptText}>
+            Đăng nhập để quản lý sân và nhận đặt lịch từ khách hàng
+          </Text>
+          <TouchableOpacity
+            style={styles.ownerLoginButton}
+            onPress={handleLogin}
+          >
+            <Text style={styles.ownerLoginButtonText}>Đăng nhập chủ sân</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -579,39 +581,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
   },
-  qrContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-  },
-  qrCode: {
-    width: 60,
-    height: 60,
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
-  },
-  qrPattern: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    width: 20,
-    height: 20,
-    marginBottom: 4,
-  },
-  qrDot: {
-    width: 8,
-    height: 8,
-    backgroundColor: "#333",
-    margin: 1,
-  },
-  qrText: {
-    fontSize: 8,
-    color: "#666",
-    fontWeight: "bold",
-  },
   bookButton: {
     backgroundColor: "#FFC107",
     margin: 12,
@@ -625,38 +594,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  bottomNavigation: {
+  loginPrompt: {
     backgroundColor: "white",
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-  },
-  navContainer: {
-    flexDirection: "row",
-    paddingVertical: 8,
-  },
-  navItem: {
-    flex: 1,
+    borderRadius: 12,
+    padding: 20,
+    marginTop: 8,
+    marginBottom: 32,
     alignItems: "center",
-    paddingVertical: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  navIconActive: {
-    fontSize: 20,
-    marginBottom: 4,
+  loginPromptTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 8,
   },
-  navIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-    opacity: 0.6,
-  },
-  navTextActive: {
-    fontSize: 12,
-    color: "#2E7D32",
-    fontWeight: "500",
-  },
-  navText: {
-    fontSize: 12,
+  loginPromptText: {
+    fontSize: 14,
     color: "#666",
+    textAlign: "center",
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  ownerLoginButton: {
+    backgroundColor: "#2E7D32",
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  ownerLoginButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
-export default SportsBookingApp;
+export default HomeScreen;
