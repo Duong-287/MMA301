@@ -1,771 +1,632 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
+  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  Dimensions,
+  SafeAreaView,
   StatusBar,
+  ActivityIndicator,
   Alert,
-  Platform,
+  TextInput,
+  Modal,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Feather from "react-native-vector-icons/Feather";
+import { courtAPI } from "../../services/court";
+import { bookingAPI } from "../../services/booking";
 
-const { width } = Dimensions.get("window");
+const BookingScreen = ({ navigation, route }) => {
+  const { courtId, selectedDate } = route?.params || {};
 
-export default function BookingScreen() {
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [courts, setCourts] = useState([]);
   const [selectedCourt, setSelectedCourt] = useState(null);
-  const [selectedDuration, setSelectedDuration] = useState(90); // minutes
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [bookingForm, setBookingForm] = useState({
-    playerName: "Nguyễn Văn An",
-    phone: "0123 456 789",
-    email: "nguyenvanan@email.com",
-    note: "",
+  const [bookingDate, setBookingDate] = useState(selectedDate || new Date());
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "",
+    phone: "",
+    email: "",
   });
 
-  // Mock data - trong thực tế sẽ fetch từ API
-  const courts = [
-    { id: 1, name: "Sân A1", type: "Sân đơn", price: 80000, available: true },
-    { id: 2, name: "Sân A2", type: "Sân đôi", price: 100000, available: true },
-    { id: 3, name: "Sân B1", type: "Sân đơn", price: 80000, available: false },
-    { id: 4, name: "Sân B2", type: "Sân đôi", price: 100000, available: true },
-    { id: 5, name: "Sân C1", type: "Sân VIP", price: 150000, available: true },
-    { id: 6, name: "Sân C2", type: "Sân VIP", price: 150000, available: true },
-  ];
+  useEffect(() => {
+    loadCourts();
+  }, []);
 
-  const timeSlots = [
-    { id: 1, time: "06:00", available: true, peak: false },
-    { id: 2, time: "07:30", available: true, peak: false },
-    { id: 3, time: "09:00", available: false, peak: false },
-    { id: 4, time: "10:30", available: true, peak: false },
-    { id: 5, time: "12:00", available: true, peak: false },
-    { id: 6, time: "13:30", available: true, peak: false },
-    { id: 7, time: "15:00", available: true, peak: false },
-    { id: 8, time: "16:30", available: true, peak: false },
-    { id: 9, time: "18:00", available: true, peak: true },
-    { id: 10, time: "19:30", available: false, peak: true },
-    { id: 11, time: "21:00", available: true, peak: true },
-  ];
-
-  const durations = [
-    { value: 60, label: "1 giờ", multiplier: 0.7 },
-    { value: 90, label: "1.5 giờ", multiplier: 1.0 },
-    { value: 120, label: "2 giờ", multiplier: 1.8 },
-  ];
-
-  // Generate calendar dates
-  const generateCalendarDates = () => {
-    const dates = [];
-    const today = new Date();
-
-    for (let i = 0; i < 14; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push(date);
+  useEffect(() => {
+    if (selectedCourt) {
+      loadAvailableSlots();
     }
-    return dates;
+  }, [selectedCourt, bookingDate]);
+
+  const loadCourts = async () => {
+    try {
+      setLoading(true);
+      const response = await courtAPI.getAllCourts();
+
+      if (response.success) {
+        const activeCourts = response.data.filter(
+          (court) => court.status === "active"
+        );
+        setCourts(activeCourts);
+
+        // If courtId is provided, select that court
+        if (courtId) {
+          const court = activeCourts.find((c) => c._id === courtId);
+          if (court) {
+            setSelectedCourt(court);
+          }
+        } else if (activeCourts.length > 0) {
+          setSelectedCourt(activeCourts[0]);
+        }
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const calendarDates = generateCalendarDates();
+  const loadAvailableSlots = async () => {
+    if (!selectedCourt) return;
+
+    try {
+      const response = await bookingAPI.getCourtSchedule(
+        selectedCourt._id,
+        bookingDate
+      );
+
+      if (response.success) {
+        // Generate time slots and check availability
+        const slots = generateTimeSlots(
+          selectedCourt.startTime,
+          selectedCourt.endTime
+        );
+        const schedule =
+          response.data[bookingDate.toISOString().split("T")[0]] || {};
+
+        const availableSlots = slots.filter((slot) => {
+          const slotInfo = schedule[slot];
+          return !slotInfo || slotInfo.status === "available";
+        });
+
+        setAvailableSlots(availableSlots);
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error.message);
+      setAvailableSlots([]);
+    }
+  };
+
+  const generateTimeSlots = (startTime, endTime) => {
+    const slots = [];
+    const start = Number.parseInt(startTime.split(":")[0]);
+    const end = Number.parseInt(endTime.split(":")[0]);
+
+    for (let hour = start; hour < end; hour++) {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+    }
+
+    return slots;
+  };
+
+  const handleBooking = async () => {
+    if (!selectedSlot || !selectedCourt) {
+      Alert.alert("Lỗi", "Vui lòng chọn sân và khung giờ");
+      return;
+    }
+
+    if (!customerInfo.name || !customerInfo.phone) {
+      Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    try {
+      const bookingData = {
+        courtId: selectedCourt._id,
+        date: bookingDate.toISOString().split("T")[0],
+        startTime: selectedSlot,
+        endTime: `${Number.parseInt(selectedSlot.split(":")[0]) + 1}:00`,
+        customerName: customerInfo.name,
+        customerPhone: customerInfo.phone,
+        customerEmail: customerInfo.email,
+        totalAmount: selectedCourt.pricePerHour + selectedCourt.serviceFee,
+      };
+
+      const response = await bookingAPI.createBooking(bookingData);
+
+      if (response.success) {
+        Alert.alert(
+          "Thành công",
+          "Đặt sân thành công! Vui lòng chờ xác nhận.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                setShowBookingModal(false);
+                navigation.navigate("BookingHistory");
+              },
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      Alert.alert("Lỗi", error.message);
+    }
+  };
 
   const formatDate = (date) => {
-    const days = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
-    return {
-      day: days[date.getDay()],
-      date: date.getDate(),
-      month: date.getMonth() + 1,
-      fullDate: date.toLocaleDateString("vi-VN"),
-    };
+    return date.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
-  const calculateTotalPrice = () => {
-    if (!selectedCourt || !selectedTimeSlot) return 0;
-
-    const court = courts.find((c) => c.id === selectedCourt);
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
-    const duration = durations.find((d) => d.value === selectedDuration);
-
-    if (!court || !timeSlot || !duration) return 0;
-
-    let basePrice = court.price * duration.multiplier;
-
-    // Peak hour surcharge
-    if (timeSlot.peak) {
-      basePrice *= 1.2;
-    }
-
-    return Math.round(basePrice);
+  const formatCurrency = (amount) => {
+    return amount?.toLocaleString() || "0";
   };
 
-  const handleBooking = () => {
-    if (!selectedDate || !selectedTimeSlot || !selectedCourt) {
-      Alert.alert("Thông báo", "Vui lòng chọn đầy đủ thông tin đặt sân!");
-      return;
-    }
-
-    if (!bookingForm.playerName || !bookingForm.phone) {
-      Alert.alert("Thông báo", "Vui lòng điền đầy đủ thông tin liên hệ!");
-      return;
-    }
-
-    const court = courts.find((c) => c.id === selectedCourt);
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
-    const totalPrice = calculateTotalPrice();
-
-    Alert.alert(
-      "Xác nhận đặt sân",
-      `Sân: ${court.name}\nNgày: ${formatDate(selectedDate).fullDate}\nGiờ: ${
-        timeSlot.time
-      }\nThời gian: ${selectedDuration} phút\nTổng tiền: ${totalPrice.toLocaleString(
-        "vi-VN"
-      )}đ\n\nBạn có muốn xác nhận đặt sân?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Xác nhận",
-          onPress: () => {
-            Alert.alert(
-              "Thành công",
-              "Đặt sân thành công! Chúng tôi sẽ liên hệ với bạn sớm nhất."
-            );
-            // Reset form
-            setSelectedTimeSlot(null);
-            setSelectedCourt(null);
-          },
-        },
-      ]
-    );
-  };
-
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity style={styles.backButton}>
-        <Feather name="arrow-left" size={24} color="#111827" />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Đặt sân cầu lông</Text>
-      <View style={styles.headerRight} />
-    </View>
-  );
-
-  const renderCalendar = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Feather name="calendar" size={20} color="#10B981" />
-        <Text style={styles.sectionTitle}>Chọn ngày</Text>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.calendarScroll}
-      >
-        {calendarDates.map((date, index) => {
-          const dateInfo = formatDate(date);
-          const isSelected =
-            selectedDate.toDateString() === date.toDateString();
-          const isToday = new Date().toDateString() === date.toDateString();
-
-          return (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.dateCard,
-                isSelected && styles.selectedDateCard,
-                isToday && !isSelected && styles.todayDateCard,
-              ]}
-              onPress={() => setSelectedDate(date)}
-            >
-              <Text
-                style={[
-                  styles.dayText,
-                  isSelected && styles.selectedDateText,
-                  isToday && !isSelected && styles.todayDateText,
-                ]}
-              >
-                {dateInfo.day}
-              </Text>
-              <Text
-                style={[
-                  styles.dateText,
-                  isSelected && styles.selectedDateText,
-                  isToday && !isSelected && styles.todayDateText,
-                ]}
-              >
-                {dateInfo.date}
-              </Text>
-              <Text
-                style={[
-                  styles.monthText,
-                  isSelected && styles.selectedDateText,
-                  isToday && !isSelected && styles.todayDateText,
-                ]}
-              >
-                T{dateInfo.month}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    </View>
-  );
-
-  const renderTimeSlots = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Feather name="clock" size={20} color="#3B82F6" />
-        <Text style={styles.sectionTitle}>Chọn giờ chơi</Text>
-      </View>
-
-      <View style={styles.timeSlotsGrid}>
-        {timeSlots.map((slot) => (
-          <TouchableOpacity
-            key={slot.id}
-            style={[
-              styles.timeSlot,
-              !slot.available && styles.unavailableTimeSlot,
-              selectedTimeSlot === slot.id && styles.selectedTimeSlot,
-              slot.peak && slot.available && styles.peakTimeSlot,
-            ]}
-            onPress={() => slot.available && setSelectedTimeSlot(slot.id)}
-            disabled={!slot.available}
-          >
-            <Text
-              style={[
-                styles.timeSlotText,
-                !slot.available && styles.unavailableTimeSlotText,
-                selectedTimeSlot === slot.id && styles.selectedTimeSlotText,
-              ]}
-            >
-              {slot.time}
-            </Text>
-            {slot.peak && slot.available && (
-              <Text style={styles.peakLabel}>Giờ cao điểm</Text>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const renderDuration = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Feather name="watch" size={20} color="#F59E0B" />
-        <Text style={styles.sectionTitle}>Thời gian chơi</Text>
-      </View>
-
-      <View style={styles.durationContainer}>
-        {durations.map((duration) => (
-          <TouchableOpacity
-            key={duration.value}
-            style={[
-              styles.durationCard,
-              selectedDuration === duration.value &&
-                styles.selectedDurationCard,
-            ]}
-            onPress={() => setSelectedDuration(duration.value)}
-          >
-            <Text
-              style={[
-                styles.durationText,
-                selectedDuration === duration.value &&
-                  styles.selectedDurationText,
-              ]}
-            >
-              {duration.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const renderCourts = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Feather name="grid" size={20} color="#8B5CF6" />
-        <Text style={styles.sectionTitle}>Chọn sân</Text>
-      </View>
-
-      <View style={styles.courtsGrid}>
-        {courts.map((court) => (
-          <TouchableOpacity
-            key={court.id}
-            style={[
-              styles.courtCard,
-              !court.available && styles.unavailableCourtCard,
-              selectedCourt === court.id && styles.selectedCourtCard,
-            ]}
-            onPress={() => court.available && setSelectedCourt(court.id)}
-            disabled={!court.available}
-          >
-            <View style={styles.courtInfo}>
-              <Text
-                style={[
-                  styles.courtName,
-                  !court.available && styles.unavailableCourtText,
-                  selectedCourt === court.id && styles.selectedCourtText,
-                ]}
-              >
-                {court.name}
-              </Text>
-              <Text
-                style={[
-                  styles.courtType,
-                  !court.available && styles.unavailableCourtText,
-                  selectedCourt === court.id && styles.selectedCourtText,
-                ]}
-              >
-                {court.type}
-              </Text>
-              <Text
-                style={[
-                  styles.courtPrice,
-                  !court.available && styles.unavailableCourtText,
-                  selectedCourt === court.id && styles.selectedCourtText,
-                ]}
-              >
-                {court.price.toLocaleString("vi-VN")}đ/1.5h
-              </Text>
-            </View>
-
-            {!court.available && (
-              <View style={styles.unavailableBadge}>
-                <Text style={styles.unavailableBadgeText}>Đã đặt</Text>
-              </View>
-            )}
-
-            {selectedCourt === court.id && (
-              <View style={styles.selectedBadge}>
-                <Feather name="check" size={16} color="#fff" />
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
-      </View>
-    </View>
-  );
-
-  const renderBookingForm = () => (
-    <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <Feather name="user" size={20} color="#EF4444" />
-        <Text style={styles.sectionTitle}>Thông tin đặt sân</Text>
-      </View>
-
-      <View style={styles.formContainer}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Họ và tên *</Text>
-          <TextInput
-            style={styles.input}
-            value={bookingForm.playerName}
-            onChangeText={(text) =>
-              setBookingForm((prev) => ({ ...prev, playerName: text }))
-            }
-            placeholder="Nhập họ và tên"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Số điện thoại *</Text>
-          <TextInput
-            style={styles.input}
-            value={bookingForm.phone}
-            onChangeText={(text) =>
-              setBookingForm((prev) => ({ ...prev, phone: text }))
-            }
-            placeholder="Nhập số điện thoại"
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Email</Text>
-          <TextInput
-            style={styles.input}
-            value={bookingForm.email}
-            onChangeText={(text) =>
-              setBookingForm((prev) => ({ ...prev, email: text }))
-            }
-            placeholder="Nhập email"
-            keyboardType="email-address"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Ghi chú</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={bookingForm.note}
-            onChangeText={(text) =>
-              setBookingForm((prev) => ({ ...prev, note: text }))
-            }
-            placeholder="Ghi chú thêm (tùy chọn)"
-            multiline
-            numberOfLines={3}
-          />
-        </View>
-      </View>
-    </View>
-  );
-
-  const renderSummary = () => {
-    const totalPrice = calculateTotalPrice();
-    const court = courts.find((c) => c.id === selectedCourt);
-    const timeSlot = timeSlots.find((t) => t.id === selectedTimeSlot);
-
-    if (!court || !timeSlot) return null;
-
+  if (loading) {
     return (
-      <View style={styles.summarySection}>
-        <View style={styles.summaryHeader}>
-          <Feather name="file-text" size={20} color="#10B981" />
-          <Text style={styles.summaryTitle}>Tóm tắt đặt sân</Text>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={styles.loadingText}>Đang tải thông tin sân...</Text>
         </View>
-
-        <View style={styles.summaryContent}>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Sân:</Text>
-            <Text style={styles.summaryValue}>
-              {court.name} ({court.type})
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Ngày:</Text>
-            <Text style={styles.summaryValue}>
-              {formatDate(selectedDate).fullDate}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Giờ:</Text>
-            <Text style={styles.summaryValue}>{timeSlot.time}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Thời gian:</Text>
-            <Text style={styles.summaryValue}>{selectedDuration} phút</Text>
-          </View>
-
-          {timeSlot.peak && (
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Phụ thu giờ cao điểm:</Text>
-              <Text style={styles.summaryValue}>+20%</Text>
-            </View>
-          )}
-
-          <View style={[styles.summaryRow, styles.totalRow]}>
-            <Text style={styles.totalLabel}>Tổng tiền:</Text>
-            <Text style={styles.totalValue}>
-              {totalPrice.toLocaleString("vi-VN")}đ
-            </Text>
-          </View>
-        </View>
-      </View>
+      </SafeAreaView>
     );
-  };
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
-        {renderHeader()}
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-          {renderCalendar()}
-          {renderTimeSlots()}
-          {renderDuration()}
-          {renderCourts()}
-          {renderBookingForm()}
-          {renderSummary()}
-          <View style={styles.bottomPadding} />
-        </ScrollView>
-        <View style={styles.bottomBar}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.priceLabel}>Tổng tiền:</Text>
-            <Text style={styles.priceValue}>
-              {calculateTotalPrice().toLocaleString("vi-VN")}đ
-            </Text>
+          <Text style={styles.backIcon}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Đặt sân</Text>
+        <View style={styles.placeholder} />
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Court Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Chọn sân</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {courts.map((court) => (
+              <TouchableOpacity
+                key={court._id}
+                style={[
+                  styles.courtCard,
+                  selectedCourt?._id === court._id && styles.courtCardSelected,
+                ]}
+                onPress={() => setSelectedCourt(court)}
+              >
+                <Text style={styles.courtName}>{court.name}</Text>
+                <Text style={styles.courtPrice}>
+                  {formatCurrency(court.pricePerHour)} VNĐ/giờ
+                </Text>
+                <Text style={styles.courtTime}>
+                  {court.startTime} - {court.endTime}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Date Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Chọn ngày</Text>
+          <TouchableOpacity style={styles.dateSelector}>
+            <Text style={styles.dateText}>{formatDate(bookingDate)}</Text>
+            <Text style={styles.dateIcon}>📅</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Time Slots */}
+        {selectedCourt && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Chọn khung giờ</Text>
+            <View style={styles.slotsGrid}>
+              {availableSlots.map((slot) => (
+                <TouchableOpacity
+                  key={slot}
+                  style={[
+                    styles.slotButton,
+                    selectedSlot === slot && styles.slotButtonSelected,
+                  ]}
+                  onPress={() => setSelectedSlot(slot)}
+                >
+                  <Text
+                    style={[
+                      styles.slotText,
+                      selectedSlot === slot && styles.slotTextSelected,
+                    ]}
+                  >
+                    {slot} - {Number.parseInt(slot.split(":")[0]) + 1}:00
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {availableSlots.length === 0 && (
+              <View style={styles.noSlotsContainer}>
+                <Text style={styles.noSlotsText}>Không có khung giờ trống</Text>
+              </View>
+            )}
           </View>
+        )}
+
+        {/* Booking Summary */}
+        {selectedCourt && selectedSlot && (
+          <View style={styles.summarySection}>
+            <Text style={styles.sectionTitle}>Thông tin đặt sân</Text>
+            <View style={styles.summaryCard}>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Sân:</Text>
+                <Text style={styles.summaryValue}>{selectedCourt.name}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Ngày:</Text>
+                <Text style={styles.summaryValue}>
+                  {formatDate(bookingDate)}
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Giờ:</Text>
+                <Text style={styles.summaryValue}>
+                  {selectedSlot} -{" "}
+                  {Number.parseInt(selectedSlot.split(":")[0]) + 1}:00
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Giá sân:</Text>
+                <Text style={styles.summaryValue}>
+                  {formatCurrency(selectedCourt.pricePerHour)} VNĐ
+                </Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Phí dịch vụ:</Text>
+                <Text style={styles.summaryValue}>
+                  {formatCurrency(selectedCourt.serviceFee)} VNĐ
+                </Text>
+              </View>
+              <View style={[styles.summaryRow, styles.totalRow]}>
+                <Text style={styles.totalLabel}>Tổng cộng:</Text>
+                <Text style={styles.totalValue}>
+                  {formatCurrency(
+                    selectedCourt.pricePerHour + selectedCourt.serviceFee
+                  )}{" "}
+                  VNĐ
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Book Button */}
+        {selectedCourt && selectedSlot && (
           <TouchableOpacity
-            style={[
-              styles.bookButton,
-              (!selectedDate || !selectedTimeSlot || !selectedCourt) &&
-                styles.disabledBookButton,
-            ]}
-            onPress={handleBooking}
-            disabled={!selectedDate || !selectedTimeSlot || !selectedCourt}
+            style={styles.bookButton}
+            onPress={() => setShowBookingModal(true)}
           >
             <Text style={styles.bookButtonText}>Đặt sân ngay</Text>
           </TouchableOpacity>
+        )}
+      </ScrollView>
+
+      {/* Booking Modal */}
+      <Modal visible={showBookingModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Thông tin khách hàng</Text>
+              <TouchableOpacity onPress={() => setShowBookingModal(false)}>
+                <Text style={styles.modalCloseButton}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Họ và tên *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={customerInfo.name}
+                  onChangeText={(text) =>
+                    setCustomerInfo({ ...customerInfo, name: text })
+                  }
+                  placeholder="Nhập họ và tên"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Số điện thoại *</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={customerInfo.phone}
+                  onChangeText={(text) =>
+                    setCustomerInfo({ ...customerInfo, phone: text })
+                  }
+                  placeholder="Nhập số điện thoại"
+                  keyboardType="phone-pad"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Email</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={customerInfo.email}
+                  onChangeText={(text) =>
+                    setCustomerInfo({ ...customerInfo, email: text })
+                  }
+                  placeholder="Nhập email (tùy chọn)"
+                  keyboardType="email-address"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={handleBooking}
+              >
+                <Text style={styles.confirmButtonText}>Xác nhận đặt sân</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
         </View>
-      </View>
+      </Modal>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#f8f9fa",
   },
-  scrollView: {
+  loadingContainer: {
     flex: 1,
-  },
-  iconPlaceholder: {
-    backgroundColor: "#E5E7EB",
-    borderRadius: 10,
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
   },
   header: {
+    backgroundColor: "#2E7D32",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    paddingVertical: 16,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
-    backgroundColor: "#F3F4F6",
+    alignItems: "center",
+  },
+  backIcon: {
+    fontSize: 20,
+    color: "white",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#111827",
+    color: "white",
   },
-  headerRight: {
+  placeholder: {
     width: 40,
   },
-  section: {
-    backgroundColor: "#fff",
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+  content: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
+  section: {
+    marginTop: 20,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-    marginLeft: 8,
-  },
-  calendarScroll: {
-    marginHorizontal: -4,
-  },
-  dateCard: {
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginHorizontal: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    minWidth: 60,
-  },
-  selectedDateCard: {
-    backgroundColor: "#10B981",
-    borderColor: "#10B981",
-  },
-  todayDateCard: {
-    borderColor: "#10B981",
-    borderWidth: 2,
-  },
-  dayText: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginBottom: 4,
-  },
-  dateText: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 2,
-  },
-  monthText: {
-    fontSize: 12,
-    color: "#6B7280",
-  },
-  selectedDateText: {
-    color: "#fff",
-  },
-  todayDateText: {
-    color: "#10B981",
-  },
-  timeSlotsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -4,
-  },
-  timeSlot: {
-    width: (width - 80) / 3,
-    alignItems: "center",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    marginHorizontal: 4,
-    marginBottom: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  selectedTimeSlot: {
-    backgroundColor: "#3B82F6",
-    borderColor: "#3B82F6",
-  },
-  unavailableTimeSlot: {
-    backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
-  },
-  peakTimeSlot: {
-    borderColor: "#F59E0B",
-    borderWidth: 2,
-  },
-  timeSlotText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  selectedTimeSlotText: {
-    color: "#fff",
-  },
-  unavailableTimeSlotText: {
-    color: "#9CA3AF",
-  },
-  peakLabel: {
-    fontSize: 10,
-    color: "#F59E0B",
-    marginTop: 2,
-  },
-  durationContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  durationCard: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 12,
-    marginHorizontal: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-  },
-  selectedDurationCard: {
-    backgroundColor: "#F59E0B",
-    borderColor: "#F59E0B",
-  },
-  durationText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  selectedDurationText: {
-    color: "#fff",
-  },
-  courtsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginHorizontal: -4,
+    color: "#333",
+    marginBottom: 12,
   },
   courtCard: {
-    width: (width - 80) / 2,
-    marginHorizontal: 4,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    position: "relative",
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginRight: 12,
+    minWidth: 200,
+    borderWidth: 2,
+    borderColor: "transparent",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  selectedCourtCard: {
-    backgroundColor: "#8B5CF6",
-    borderColor: "#8B5CF6",
-  },
-  unavailableCourtCard: {
-    backgroundColor: "#F3F4F6",
-    borderColor: "#E5E7EB",
-  },
-  courtInfo: {
-    alignItems: "center",
+  courtCardSelected: {
+    borderColor: "#2E7D32",
   },
   courtName: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#111827",
-    marginBottom: 4,
-  },
-  courtType: {
-    fontSize: 12,
-    color: "#6B7280",
+    color: "#333",
     marginBottom: 4,
   },
   courtPrice: {
     fontSize: 14,
+    color: "#2E7D32",
     fontWeight: "600",
-    color: "#10B981",
+    marginBottom: 2,
   },
-  selectedCourtText: {
-    color: "#fff",
+  courtTime: {
+    fontSize: 12,
+    color: "#666",
   },
-  unavailableCourtText: {
-    color: "#9CA3AF",
-  },
-  unavailableBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "#EF4444",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  unavailableBadgeText: {
-    fontSize: 10,
-    color: "#fff",
-    fontWeight: "600",
-  },
-  selectedBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#10B981",
+  dateSelector: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  formContainer: {
+  dateText: {
+    fontSize: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  dateIcon: {
+    fontSize: 20,
+  },
+  slotsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  slotButton: {
+    backgroundColor: "white",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    minWidth: 120,
+    alignItems: "center",
+  },
+  slotButtonSelected: {
+    backgroundColor: "#2E7D32",
+    borderColor: "#2E7D32",
+  },
+  slotText: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  slotTextSelected: {
+    color: "white",
+  },
+  noSlotsContainer: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 32,
+    alignItems: "center",
+  },
+  noSlotsText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  summarySection: {
+    marginTop: 20,
+  },
+  summaryCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  summaryLabel: {
+    fontSize: 14,
+    color: "#666",
+  },
+  summaryValue: {
+    fontSize: 14,
+    color: "#333",
+    fontWeight: "500",
+  },
+  totalRow: {
+    borderBottomWidth: 0,
     marginTop: 8,
+    paddingTop: 12,
+    borderTopWidth: 2,
+    borderTopColor: "#2E7D32",
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  totalValue: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#2E7D32",
+  },
+  bookButton: {
+    backgroundColor: "#2E7D32",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 32,
+    elevation: 3,
+  },
+  bookButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  modalCloseButton: {
+    fontSize: 20,
+    color: "#666",
+  },
+  modalBody: {
+    padding: 20,
   },
   inputGroup: {
     marginBottom: 16,
@@ -773,114 +634,31 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: "#333",
     marginBottom: 8,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#D1D5DB",
+  textInput: {
+    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#111827",
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: "top",
-  },
-  summarySection: {
-    backgroundColor: "#F0FDF4",
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    padding: 16,
+    color: "#333",
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: "transparent",
   },
-  summaryHeader: {
-    flexDirection: "row",
+  confirmButton: {
+    backgroundColor: "#2E7D32",
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
-    marginBottom: 12,
+    marginTop: 20,
   },
-  summaryTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-    marginLeft: 8,
-  },
-  summaryContent: {
-    marginTop: 8,
-  },
-  summaryRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  summaryLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  summaryValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: "#BBF7D0",
-    marginTop: 8,
-    paddingTop: 12,
-  },
-  totalLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#111827",
-  },
-  totalValue: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#10B981",
-  },
-  bottomPadding: {
-    height: 100,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
-  },
-  priceContainer: {
-    flex: 1,
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: "#6B7280",
-  },
-  priceValue: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#10B981",
-  },
-  bookButton: {
-    backgroundColor: "#10B981",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginLeft: 16,
-  },
-  disabledBookButton: {
-    backgroundColor: "#9CA3AF",
-  },
-  bookButtonText: {
-    color: "#fff",
+  confirmButtonText: {
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },
 });
+
+export default BookingScreen;

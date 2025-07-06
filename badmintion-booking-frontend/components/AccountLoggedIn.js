@@ -8,6 +8,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
+import BottomNavigation from "./BottomNavigation";
 
 const AccountLoggedIn = ({
   userName,
@@ -249,6 +250,7 @@ const AccountLoggedIn = ({
           </View>
         </View>
       </ScrollView>
+      <BottomNavigation />
     </SafeAreaView>
   );
 };
