@@ -103,7 +103,10 @@ const HomeScreen = () => {
               >
                 <Text style={styles.loginBtnText}>Đăng nhập</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.registerBtn}>
+              <TouchableOpacity
+                style={styles.registerBtn}
+                onPress={() => navigation.navigate("Login")}
+              >
                 <Text style={styles.registerBtnText}>Đăng ký</Text>
                 <View style={styles.buttonShine} />
               </TouchableOpacity>
