@@ -1,31 +1,24 @@
 import React, { useState } from "react";
 import AccountLoggedIn from "../../components/AccountLoggedIn";
 import AccountNotLoggedIn from "../../components/AccountNotLoggedIn";
-
+import { useAuth } from "../../context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 
 const AccountScreen = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
-
+  const { user, setUser } = useAuth();
+  const navigation = useNavigation();
   const handleLogin = () => {
-    // Simulate login
-    setUser({
-      name: "Phong Nguyễn Nam",
-      initial: "P",
-    });
-    setIsLoggedIn(true);
+    navigation.navigate("Login");
   };
 
   const handleLogout = () => {
     setUser(null);
-    setIsLoggedIn(false);
   };
 
   const handleRegister = () => {
-    console.log("Navigate to register screen");
+    navigation.navigate("Login");
   };
 
-  // Common handlers
   const handleBookingHistory = () => {
     console.log("Navigate to booking history");
   };
@@ -71,7 +64,7 @@ const AccountScreen = () => {
     console.log("Show settings");
   };
 
-  if (isLoggedIn && user) {
+  if (user) {
     return (
       <AccountLoggedIn
         userName={user.name}
