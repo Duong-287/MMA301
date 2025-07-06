@@ -5,14 +5,16 @@ import { useAuth } from "../../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
 
 const AccountScreen = () => {
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
+
   const navigation = useNavigation();
   const handleLogin = () => {
     navigation.navigate("Login");
   };
 
-  const handleLogout = () => {
-    setUser(null);
+  const handleLogout = async () => {
+    await logout();
+    navigation.navigate("Home");
   };
 
   const handleRegister = () => {
