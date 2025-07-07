@@ -24,12 +24,6 @@ const HomeScreen = () => {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState("");
 
-  if (user) {
-    console.log("Đã đăng nhập:", user);
-  } else {
-    console.log("Chưa đăng nhập");
-  }
-
   useEffect(() => {
     moment.locale("vi");
     const now = moment();
@@ -98,7 +92,7 @@ const HomeScreen = () => {
               <Text
                 style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
               >
-                Xin chào, {user.name} 👋
+                Xin chào, {user.name}
               </Text>
             </View>
           ) : (
@@ -109,7 +103,10 @@ const HomeScreen = () => {
               >
                 <Text style={styles.loginBtnText}>Đăng nhập</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.registerBtn}>
+              <TouchableOpacity
+                style={styles.registerBtn}
+                onPress={() => navigation.navigate("Login")}
+              >
                 <Text style={styles.registerBtnText}>Đăng ký</Text>
                 <View style={styles.buttonShine} />
               </TouchableOpacity>

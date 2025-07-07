@@ -8,7 +8,7 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
-
+import BottomNavigation from "./BottomNavigation";
 const AccountNotLoggedIn = ({
   onLoginPress,
   onRegisterPress,
@@ -140,6 +140,7 @@ const AccountNotLoggedIn = ({
           </View>
         </View>
       </ScrollView>
+      <BottomNavigation />
     </SafeAreaView>
   );
 };

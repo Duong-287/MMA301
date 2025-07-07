@@ -4,19 +4,28 @@ import SportsBookingApp from "./screens/common/HomeScreen";
 import OwnerCourt from "./screens/owner/CourtScheduleScreen";
 import OwnerEditCourt from "./screens/owner/EditCourtScreen";
 import AppNavigator from "./navigation/AppNavigator";
-import OwnerDashboardScreen from "./screens/owner/OwnerDashboardScreen";
+import { AuthProvider } from "./context/AuthContext";
+import * as Linking from "expo-linking";
+
+const linking = {
+  prefixes: ["badmintonapp://"],
+  config: {
+    screens: {
+      ResetPassword: "reset_password/:token",
+    },
+  },
+};
+
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>
-        {/* <SportsBookingApp /> */}
-        {/* <RegisterScreen /> */}
-        {/* <OwnerCourt /> */}
-        {/* <OwnerEditCourt /> */}
-        {/* <OwnerDashboardScreen /> */}
-        <AppNavigator />
-      </Text>
-    </View>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer linking={linking}>
+          <AppNavigator />
+          <StatusBar style="auto" />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 
