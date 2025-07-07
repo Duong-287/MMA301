@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
-import { login, register } from "../../services/auth";
+import { login, register, forgotPassword } from "../../services/auth";
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 import { useAuth } from "../../context/AuthContext";
@@ -159,11 +159,21 @@ export default function LoginScreen() {
         { text: "Hủy", style: "cancel" },
         {
           text: "Gửi",
-          onPress: () => {
-            Alert.alert(
-              "Thành công",
-              "Link khôi phục mật khẩu đã được gửi đến email của bạn!"
-            );
+          onPress: async () => {
+            try {
+              const resForgotPass = await forgotPassword(formData.email);
+              if (!resForgotPass) {
+                Alert.alert(
+                  "Lỗi",
+                  "Không thể gửi email khôi phục. Vui lòng thử lại."
+                );
+                return;
+              }
+              Alert.alert("Thành công", "Đã gửi email khôi phục mật khẩu.");
+              navigation.navigate("VerifyOtpScreen", { email: formData.email });
+            } catch (error) {
+              Alert.alert("Lỗi", error.message || "Đã có lỗi xảy ra");
+            }
           },
         },
       ]

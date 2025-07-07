@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { log } = require("console");
-
+const sendEmail = require("../utils/sendEmail");
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password, phone, address, image } = req.body;
@@ -99,21 +99,28 @@ exports.forgotPassword = async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ message: "Email not found" });
+      return res.status(404).json({ message: "Email không tồn tại." });
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log("OTP tạo ra:", otp);
+    user.resetPasswordOTP = otp;
+    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 phút
 
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 tiếng
+    console.log("Current:", Date.now());
+    console.log("Expires:", user?.resetPasswordExpires?.getTime());
     await user.save();
 
-    const resetUrl = `http://localhost:3000/reset-password/${token}`; // frontend
-    const message = `Click vào link để đặt lại mật khẩu: ${resetUrl}`;
+    const message = `
+      <p>Xin chào ${user.fullName},</p>
+      <p>Mã khôi phục mật khẩu của bạn là: <b>${otp}</b></p>
+      <p>Mã có hiệu lực trong 10 phút.</p>
+    `;
 
-    await sendEmail(user.email, "Đặt lại mật khẩu", message);
-
-    res.status(200).json({ message: "Email khôi phục đã được gửi." });
+    await sendEmail(user.email, "Mã khôi phục mật khẩu", message, true);
+    res
+      .status(200)
+      .json({ message: "Mã khôi phục đã được gửi đến email của bạn." });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server", error: err.message });
@@ -121,26 +128,32 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { token } = req.params;
-  const { password } = req.body;
-
+  const { email, otp, password } = req.body;
+  console.log("==== DEBUG RESET PASSWORD ====");
+  console.log("Body nhận:", req.body);
+  console.log("Email nhận:", email);
+  console.log("OTP nhận:", otp);
   try {
     const user = await User.findOne({
-      resetPasswordToken: token,
+      email: String(email).trim(),
+      resetPasswordOTP: String(otp).trim(),
       resetPasswordExpires: { $gt: Date.now() },
     });
-    if (!user)
+    console.log("User tìm thấy:", user);
+    if (!user) {
       return res
         .status(400)
-        .json({ message: "Token không hợp lệ hoặc đã hết hạn." });
+        .json({ message: "Mã OTP không hợp lệ hoặc đã hết hạn." });
+    }
 
-    user.password = password; // nhớ hash nếu dùng bcrypt
-    user.resetPasswordToken = undefined;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    user.resetPasswordOTP = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
     res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
   } catch (err) {
-    res.status(500).json({ message: "Lỗi server." });
+    res.status(500).json({ message: "Lỗi server", error: err.message });
   }
 };
