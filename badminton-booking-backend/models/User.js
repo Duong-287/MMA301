@@ -14,6 +14,8 @@ const userSchema = new Schema(
     phone: String,
     address: String,
     image: { type: String },
+    resetPasswordOTP: String,
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );

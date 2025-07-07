@@ -6,6 +6,7 @@ import ProfileScreen from "../screens/common/ProfileScreen";
 import AccountScreen from "../screens/common/AccountScreen";
 import AdminDashboard from "../screens/admin/AdminDashboardScreen";
 import AdminWalletScreen from "../screens/admin/AdminWalletScreen";
+import VerifyOtpScreen from "../screens/common/VerifyOtpScreen";
 
 const Stack = createStackNavigator();
 
@@ -22,7 +23,8 @@ const AppNavigator = () => (
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Booking" component={BookingScreen} />
     <Stack.Screen name="Profile" component={ProfileScreen} />
-    <Stack.Screen name="Account" component={AccountScreen} />
+    <Stack.Screen name="Account" component={AccountScreen} /> 
+    <Stack.Screen name="VerifyOtpScreen" component={VerifyOtpScreen} />
   </Stack.Navigator>
 );
 

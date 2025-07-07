@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
-import { login } from "../../services/auth";
+import { login, register, forgotPassword } from "../../services/auth";
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 import { useAuth } from "../../context/AuthContext";
@@ -66,13 +66,14 @@ export default function LoginScreen() {
         return false;
       }
 
-      if (formData.password !== formData.confirmPassword) {
-        Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp!");
+      const phoneRegex = /^0\d{9}$/;
+      if (!phoneRegex.test(formData.phone)) {
+        Alert.alert("Lỗi", "Số điện thoại không hợp lệ!");
         return false;
       }
 
-      if (formData.phone.length < 10) {
-        Alert.alert("Lỗi", "Số điện thoại không hợp lệ!");
+      if (formData.password !== formData.confirmPassword) {
+        Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp!");
         return false;
       }
     }
@@ -99,8 +100,22 @@ export default function LoginScreen() {
           return;
         }
       } else {
-        // Gọi API đăng ký ở đây (chưa có)
-        // TODO: viết hàm register và xử lý tương tự
+        const resultRegister = await register(
+          formData.fullName,
+          formData.email,
+          formData.password,
+          formData.phone
+        );
+        if (!resultRegister) {
+          Alert.alert("Lỗi", "Đăng ký thất bại!");
+          return;
+        } else {
+          navigation.navigate("Login");
+        }
+        if (formData.password !== formData.confirmPassword) {
+          Alert.alert("Lỗi", "Mật khẩu xác nhận không khớp!");
+          return;
+        }
         Alert.alert("Thành công", "Đăng ký thành công! Vui lòng đăng nhập.", [
           {
             text: "OK",
@@ -144,11 +159,21 @@ export default function LoginScreen() {
         { text: "Hủy", style: "cancel" },
         {
           text: "Gửi",
-          onPress: () => {
-            Alert.alert(
-              "Thành công",
-              "Link khôi phục mật khẩu đã được gửi đến email của bạn!"
-            );
+          onPress: async () => {
+            try {
+              const resForgotPass = await forgotPassword(formData.email);
+              if (!resForgotPass) {
+                Alert.alert(
+                  "Lỗi",
+                  "Không thể gửi email khôi phục. Vui lòng thử lại."
+                );
+                return;
+              }
+              Alert.alert("Thành công", "Đã gửi email khôi phục mật khẩu.");
+              navigation.navigate("VerifyOtpScreen", { email: formData.email });
+            } catch (error) {
+              Alert.alert("Lỗi", error.message || "Đã có lỗi xảy ra");
+            }
           },
         },
       ]
