@@ -7,7 +7,9 @@ const verifyToken = (req, res, next) => {
   }
 
   if (!token.startsWith("Bearer ")) {
-    return res.status(403).json({ error: "Invalid token format. Use Bearer token." });
+    return res
+      .status(403)
+      .json({ error: "Invalid token format. Use Bearer token." });
   }
 
   jwt.verify(token.split(" ")[1], process.env.JWT_SECRET, (err, decoded) => {
