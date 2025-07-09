@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { log } = require("console");
 
+
 // Register a new user
 exports.register = async (req, res) => {
   try {
