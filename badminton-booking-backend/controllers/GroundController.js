@@ -13,6 +13,7 @@ const getAllGrounds = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 const getGroundById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -57,8 +58,15 @@ const createGround = async (req, res) => {
 };
 const updateGround = async (req, res) => {
   const { id } = req.params;
-  const { name, address, startTime, endTime, pricePerHour, serviceFee } =
-    req.body;
+  const {
+    name,
+    address,
+    startTime,
+    endTime,
+    pricePerHour,
+    serviceFee,
+    status,
+  } = req.body;
   try {
     const updatedCourt = await Court.findByIdAndUpdate(
       id,
@@ -69,6 +77,7 @@ const updateGround = async (req, res) => {
         endTime,
         pricePerHour,
         serviceFee,
+        status,
       },
       { new: true }
     );

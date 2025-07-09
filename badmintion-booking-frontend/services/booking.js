@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Base URL - thay đổi theo môi trường của bạn
@@ -15,7 +16,7 @@ const api = axios.create({
 // Interceptor để thêm token vào header
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("authorization"); // hoặc AsyncStorage trong React Native
+    const token = AsyncStorage.getItem("authorization"); // hoặc AsyncStorage trong React Native
     if (token) {
       config.headers.Authorization = `${token}`;
     }

@@ -1,8 +1,7 @@
 import { StatusBar } from "expo-status-bar";
 import { StyleSheet, Text, View } from "react-native";
-import SportsBookingApp from "./screens/common/HomeScreen";
-import OwnerCourt from "./screens/owner/CourtScheduleScreen";
-import OwnerEditCourt from "./screens/owner/EditCourtScreen";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { NavigationContainer } from "@react-navigation/native";
 import AppNavigator from "./navigation/AppNavigator";
 import { AuthProvider } from "./context/AuthContext";
 import * as Linking from "expo-linking";

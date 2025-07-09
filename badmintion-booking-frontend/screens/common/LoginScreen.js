@@ -19,6 +19,7 @@ import { login, register, forgotPassword } from "../../services/auth";
 import { useNavigation } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
 import { useAuth } from "../../context/AuthContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginScreen() {
   const navigation = useNavigation();
@@ -90,11 +91,14 @@ export default function LoginScreen() {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
         const user = result.user;
+        await AsyncStorage.setItem("token", result.token);
         setUser(user);
         if (user.role === "admin") {
           navigation.navigate("AdminDashboard");
         } else if (user.role === "customer") {
           navigation.navigate("Home");
+        } else if (user.role === "owner") {
+          navigation.navigate("OwnerHome");
         } else {
           Alert.alert("Lỗi", "Vai trò người dùng không hợp lệ!");
           return;

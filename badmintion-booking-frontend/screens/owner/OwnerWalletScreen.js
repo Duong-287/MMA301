@@ -13,7 +13,7 @@ import {
   TextInput,
   Modal,
 } from "react-native";
-import { walletAPI } from "../../services/wallet";
+import { getOwnerWallet } from "../../services/wallet";
 
 const OwnerWalletScreen = ({ navigation, route }) => {
   const { ownerId } = route?.params || {};
@@ -61,21 +61,21 @@ const OwnerWalletScreen = ({ navigation, route }) => {
       // Load wallet info, transactions, and revenue stats
       const [walletResponse, transactionsResponse, revenueResponse] =
         await Promise.all([
-          walletAPI.getWalletInfo(ownerId),
-          walletAPI.getTransactionHistory(ownerId, {
-            startDate: startDate.toISOString().split("T")[0],
-            endDate: endDate.toISOString().split("T")[0],
-            limit: 20,
-          }),
-          walletAPI.getRevenueStats(ownerId, startDate, endDate),
+          getOwnerWallet(ownerId),
+          // walletAPI.getTransactionHistory(ownerId, {
+          //   startDate: startDate.toISOString().split("T")[0],
+          //   endDate: endDate.toISOString().split("T")[0],
+          //   limit: 20,
+          // }),
+          // walletAPI.getRevenueStats(ownerId, startDate, endDate),
         ]);
 
       setWalletData({
         balance: walletResponse.success ? walletResponse.data.balance : 0,
-        transactions: transactionsResponse.success
-          ? transactionsResponse.data
-          : [],
-        revenueStats: revenueResponse.success ? revenueResponse.data : {},
+        // transactions: transactionsResponse.success
+        //   ? transactionsResponse.data
+        //   : [],
+        // revenueStats: revenueResponse.success ? revenueResponse.data : {},
       });
     } catch (error) {
       Alert.alert("Lỗi", error.message);
@@ -276,14 +276,14 @@ const OwnerWalletScreen = ({ navigation, route }) => {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {formatCurrency(walletData.revenueStats.totalRevenue)}
+              {/* {formatCurrency(walletData.revenueStats.totalRevenue)} */}
             </Text>
             <Text style={styles.statLabel}>Tổng doanh thu</Text>
             <Text style={styles.statPeriod}>{getPeriodText()}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {walletData.revenueStats.totalBookings || 0}
+              {/* {walletData.revenueStats.totalBookings || 0} */}
             </Text>
             <Text style={styles.statLabel}>Tổng booking</Text>
             <Text style={styles.statPeriod}>{getPeriodText()}</Text>
@@ -293,14 +293,14 @@ const OwnerWalletScreen = ({ navigation, route }) => {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {formatCurrency(walletData.revenueStats.averageBookingValue)}
+              {/* {formatCurrency(walletData.revenueStats.averageBookingValue)} */}
             </Text>
             <Text style={styles.statLabel}>Giá trị TB/booking</Text>
             <Text style={styles.statPeriod}>{getPeriodText()}</Text>
           </View>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>
-              {walletData.revenueStats.completionRate || 0}%
+              {/* {walletData.revenueStats.completionRate || 0}% */}
             </Text>
             <Text style={styles.statLabel}>Tỷ lệ hoàn thành</Text>
             <Text style={styles.statPeriod}>{getPeriodText()}</Text>
@@ -311,7 +311,7 @@ const OwnerWalletScreen = ({ navigation, route }) => {
         <View style={styles.transactionSection}>
           <Text style={styles.sectionTitle}>Lịch sử giao dịch</Text>
 
-          {walletData.transactions.length > 0 ? (
+          {/* {walletData.transactions.length > 0 ? (
             walletData.transactions.map((transaction, index) => (
               <View key={index} style={styles.transactionItem}>
                 <View style={styles.transactionLeft}>
@@ -358,7 +358,7 @@ const OwnerWalletScreen = ({ navigation, route }) => {
                 Chưa có giao dịch nào
               </Text>
             </View>
-          )}
+          )} */}
         </View>
       </ScrollView>
 

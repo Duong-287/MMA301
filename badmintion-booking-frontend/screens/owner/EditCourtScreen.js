@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,61 +11,75 @@ import {
   Alert,
   Switch,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { createCourt, getCourtById, updateCourt } from "../../services/court";
+import { useAuth } from "../../context/AuthContext";
 
-const EditCourtScreen = () => {
+const EditCourtScreen = ({ route }) => {
+  const { user } = useAuth();
+  const ownerId = user?.id;
+  const { courtId } = route.params || {};
+  const isEditMode = !!courtId;
+  const navigation = useNavigation();
   const [courtData, setCourtData] = useState({
-    name: "CLB Cầu Lông TPT Sport - Lăng đại học",
-    address: "Thôn D, Tân Thới Tung, Đông Hòa, Dĩ An, Bình Dương",
-    phone: "0974857048",
-    openTime: "06:00",
+    name: "",
+    ownerId: ownerId,
+    address: "",
+    startTime: "06:00",
     closeTime: "22:00",
-    pricePerHour: "80000",
-    description: "Sân cầu lông chất lượng cao với đầy đủ tiện nghi",
-    isActive: true,
-    hasParking: true,
-    hasShower: true,
-    hasEquipmentRental: false,
+    pricePerHour: "0",
+    serviceFee: "0",
+    status: "active",
   });
 
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isEditMode) {
+      const loadCourtData = async () => {
+        try {
+          const res = await getCourtById(courtId);
+          const court = res.data.court;
+          setCourtData({
+            name: court.name || "",
+            ownerId: court.ownerId,
+            address: court.address || "",
+            startTime: court.startTime || "06:00",
+            endTime: court.endTime || "22:00",
+            pricePerHour: court.pricePerHour?.toString() || "0",
+            serviceFee: court.serviceFee?.toString() || "0",
+            status: court.status === "active",
+          });
+        } catch (error) {
+          Alert.alert("Lỗi", "Không thể tải thông tin sân");
+          console.log(error);
+        }
+      };
+      loadCourtData();
+    }
+  }, [courtId]);
 
   const handleInputChange = (field, value) => {
     setCourtData((prev) => ({
       ...prev,
       [field]: value,
     }));
-
-    // Clear error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({
-        ...prev,
-        [field]: null,
-      }));
+      setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!courtData.name.trim()) {
-      newErrors.name = "Tên sân không được để trống";
-    }
-
-    if (!courtData.address.trim()) {
+    if (!courtData.name.trim()) newErrors.name = "Tên sân không được để trống";
+    if (!courtData.address.trim())
       newErrors.address = "Địa chỉ không được để trống";
-    }
-
-    if (!courtData.phone.trim()) {
-      newErrors.phone = "Số điện thoại không được để trống";
-    } else if (!/^[0-9]{10,11}$/.test(courtData.phone)) {
-      newErrors.phone = "Số điện thoại không hợp lệ";
-    }
 
     if (!courtData.pricePerHour.trim()) {
       newErrors.pricePerHour = "Giá thuê không được để trống";
     } else if (
       isNaN(courtData.pricePerHour) ||
-      Number.parseInt(courtData.pricePerHour) <= 0
+      parseInt(courtData.pricePerHour) <= 0
     ) {
       newErrors.pricePerHour = "Giá thuê phải là số dương";
     }
@@ -74,18 +88,31 @@ const EditCourtScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
-    if (validateForm()) {
-      Alert.alert("Xác nhận", "Bạn có chắc chắn muốn lưu thay đổi?", [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Lưu",
-          onPress: () => {
-            console.log("Saving court data:", courtData);
-            Alert.alert("Thành công", "Đã cập nhật thông tin sân!");
-          },
-        },
-      ]);
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    const payload = {
+      ...courtData,
+      pricePerHour: parseInt(courtData.pricePerHour),
+      serviceFee: parseInt(courtData.serviceFee),
+      status: courtData.status ? "active" : "waiting",
+    };
+
+    try {
+      if (isEditMode) {
+        await updateCourt(courtId, payload);
+      } else {
+        await createCourt({ ...payload, ownerId });
+      }
+
+      Alert.alert(
+        "Thành công",
+        isEditMode ? "Đã cập nhật sân!" : "Đã tạo sân mới!"
+      );
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Lỗi", "Không thể lưu dữ liệu");
     }
   };
 
@@ -107,16 +134,22 @@ const EditCourtScreen = () => {
     );
   };
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chỉnh sửa sân</Text>
+        <Text style={styles.headerTitle}>
+          {isEditMode ? "Chỉnh sửa sân" : "Thêm sân mới"}
+        </Text>
         <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveButtonText}>Lưu</Text>
         </TouchableOpacity>
@@ -158,21 +191,6 @@ const EditCourtScreen = () => {
               <Text style={styles.errorText}>{errors.address}</Text>
             )}
           </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Số điện thoại *</Text>
-            <TextInput
-              style={[styles.textInput, errors.phone && styles.inputError]}
-              value={courtData.phone}
-              onChangeText={(text) => handleInputChange("phone", text)}
-              placeholder="Nhập số điện thoại"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-            />
-            {errors.phone && (
-              <Text style={styles.errorText}>{errors.phone}</Text>
-            )}
-          </View>
         </View>
 
         {/* Operating Hours */}
@@ -184,8 +202,8 @@ const EditCourtScreen = () => {
               <Text style={styles.inputLabel}>Giờ mở cửa</Text>
               <TextInput
                 style={styles.timeInput}
-                value={courtData.openTime}
-                onChangeText={(text) => handleInputChange("openTime", text)}
+                value={courtData.startTime}
+                onChangeText={(text) => handleInputChange("startTime", text)}
                 placeholder="06:00"
                 placeholderTextColor="#999"
               />
@@ -197,8 +215,8 @@ const EditCourtScreen = () => {
               <Text style={styles.inputLabel}>Giờ đóng cửa</Text>
               <TextInput
                 style={styles.timeInput}
-                value={courtData.closeTime}
-                onChangeText={(text) => handleInputChange("closeTime", text)}
+                value={courtData.endTime}
+                onChangeText={(text) => handleInputChange("endTime", text)}
                 placeholder="22:00"
                 placeholderTextColor="#999"
               />
@@ -229,63 +247,22 @@ const EditCourtScreen = () => {
           </View>
         </View>
 
-        {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Mô tả</Text>
+          <Text style={styles.sectionTitle}>Giá dịch vụ</Text>
 
           <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Giá dịch vụ/giờ (VNĐ) *</Text>
             <TextInput
-              style={[styles.textInput, styles.textArea]}
-              value={courtData.description}
-              onChangeText={(text) => handleInputChange("description", text)}
-              placeholder="Nhập mô tả về sân..."
+              style={[styles.textInput, errors.serviceFee && styles.inputError]}
+              value={courtData.serviceFee}
+              onChangeText={(text) => handleInputChange("serviceFee", text)}
+              placeholder="0"
               placeholderTextColor="#999"
-              multiline
-              numberOfLines={4}
+              keyboardType="numeric"
             />
-          </View>
-        </View>
-
-        {/* Amenities */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tiện ích</Text>
-
-          <View style={styles.switchGroup}>
-            <View style={styles.switchItem}>
-              <Text style={styles.switchLabel}>Bãi đỗ xe</Text>
-              <Switch
-                value={courtData.hasParking}
-                onValueChange={(value) =>
-                  handleInputChange("hasParking", value)
-                }
-                trackColor={{ false: "#e0e0e0", true: "#81C784" }}
-                thumbColor={courtData.hasParking ? "#2E7D32" : "#f4f3f4"}
-              />
-            </View>
-
-            <View style={styles.switchItem}>
-              <Text style={styles.switchLabel}>Phòng tắm</Text>
-              <Switch
-                value={courtData.hasShower}
-                onValueChange={(value) => handleInputChange("hasShower", value)}
-                trackColor={{ false: "#e0e0e0", true: "#81C784" }}
-                thumbColor={courtData.hasShower ? "#2E7D32" : "#f4f3f4"}
-              />
-            </View>
-
-            <View style={styles.switchItem}>
-              <Text style={styles.switchLabel}>Cho thuê dụng cụ</Text>
-              <Switch
-                value={courtData.hasEquipmentRental}
-                onValueChange={(value) =>
-                  handleInputChange("hasEquipmentRental", value)
-                }
-                trackColor={{ false: "#e0e0e0", true: "#81C784" }}
-                thumbColor={
-                  courtData.hasEquipmentRental ? "#2E7D32" : "#f4f3f4"
-                }
-              />
-            </View>
+            {errors.serviceFee && (
+              <Text style={styles.errorText}>{errors.serviceFee}</Text>
+            )}
           </View>
         </View>
 
@@ -296,14 +273,14 @@ const EditCourtScreen = () => {
           <View style={styles.switchItem}>
             <Text style={styles.switchLabel}>Kích hoạt sân</Text>
             <Switch
-              value={courtData.isActive}
-              onValueChange={(value) => handleInputChange("isActive", value)}
+              value={courtData.status}
+              onValueChange={(value) => handleInputChange("status", value)}
               trackColor={{ false: "#e0e0e0", true: "#81C784" }}
-              thumbColor={courtData.isActive ? "#2E7D32" : "#f4f3f4"}
+              thumbColor={courtData.status ? "#2E7D32" : "#f4f3f4"}
             />
           </View>
           <Text style={styles.statusNote}>
-            {courtData.isActive
+            {courtData.status
               ? "Sân đang hoạt động và có thể nhận đặt lịch"
               : "Sân tạm ngưng hoạt động"}
           </Text>
@@ -311,13 +288,14 @@ const EditCourtScreen = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.saveMainButton} onPress={handleSave}>
-            <Text style={styles.saveMainButtonText}>💾 Lưu thay đổi</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
-            <Text style={styles.deleteButtonText}>🗑️ Xóa sân</Text>
-          </TouchableOpacity>
+          {isEditMode && (
+            <TouchableOpacity
+              onPress={handleDelete}
+              style={styles.deleteButton}
+            >
+              <Text style={styles.deleteButtonText}>🗑️ Xóa sân</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -463,18 +441,6 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 32,
     gap: 12,
-  },
-  saveMainButton: {
-    backgroundColor: "#2E7D32",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    elevation: 3,
-  },
-  saveMainButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   deleteButton: {
     backgroundColor: "#F44336",
