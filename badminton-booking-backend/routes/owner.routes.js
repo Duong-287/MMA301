@@ -4,16 +4,17 @@ const { depositMoney, withdrawMoney, getWallet } = require("../controllers/Walle
 const { getAllGrounds, createGround, updateGround, deleteGround } = require("../controllers/GroundController");
 const { getBookingHistory, getBookingById } = require("../controllers/BookingController");
 const { getInformation } = require("../controllers/UserController");
+const upload = require("../utils/upload");
 
-router.get("/profile", getInformation)
-router.get("/wallet", getWallet)
-router.post("/wallet/deposit", depositMoney)
-router.post("/wallet/withdraw", withdrawMoney)
-router.get("/grounds", getAllGrounds)
-router.post("/grounds", createGround)
-router.put("/grounds/:id", updateGround)
-router.delete("/grounds/:id", deleteGround)
-router.get("/bookings", getBookingHistory)
-router.get("/bookings/:id", getBookingById) 
+router.get("/profile", getInformation);
+router.get("/wallet", getWallet);
+router.post("/wallet/deposit", depositMoney);
+router.post("/wallet/withdraw", withdrawMoney);
+router.get("/grounds", getAllGrounds);
+router.post("/grounds", upload.array("images"), createGround);
+router.put("/grounds/:id", upload.array("images"), updateGround);
+router.delete("/grounds/:id", deleteGround);
+router.get("/bookings", getBookingHistory);
+router.get("/bookings/:id", getBookingById);
 
 module.exports = router;
