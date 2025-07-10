@@ -271,17 +271,6 @@ const HomeScreen = () => {
                 </View>
               </View>
             </View>
-            <View style={styles.qrContainer}>
-              <View style={styles.qrCode}>
-                <View style={styles.qrPattern}>
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                </View>
-                <Text style={styles.qrText}>QR CODE</Text>
-              </View>
-            </View>
           </View>
 
           <TouchableOpacity style={styles.bookButton}>
@@ -906,7 +895,11 @@ const styles = StyleSheet.create({
   navItem: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 8,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   navItemActive: {
     position: "relative",

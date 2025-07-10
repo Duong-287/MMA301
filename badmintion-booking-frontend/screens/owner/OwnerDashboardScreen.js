@@ -12,14 +12,16 @@ import {
   RefreshControl,
   Dimensions,
 } from "react-native";
-import { courtAPI } from "../../services/court";
-import { bookingAPI } from "../../services/booking";
-import { walletAPI } from "../../services/wallet";
+import { getCourtsByOwner } from "../../services/court";
+// import { bookingAPI } from "../../services/booking";
+import { getOwnerWallet } from "../../services/wallet";
+import { useAuth } from "../../context/AuthContext";
 
 const { width } = Dimensions.get("window");
 
 const OwnerDashboardScreen = ({ navigation, route }) => {
-  const { ownerId } = route?.params || { ownerId: "owner123" }; // Default for testing
+  const { user } = useAuth();
+  const ownerId = user?.id;
 
   const [dashboardData, setDashboardData] = useState({
     courts: [],
@@ -38,12 +40,11 @@ const OwnerDashboardScreen = ({ navigation, route }) => {
     try {
       setLoading(true);
 
-      // Load all data in parallel
       const [courtsResponse, walletResponse, revenueResponse] =
         await Promise.all([
-          courtAPI.getCourtsByOwner(ownerId),
-          walletAPI.getWalletInfo(ownerId),
-          walletAPI.getRevenueStats(ownerId, new Date(), new Date()),
+          getCourtsByOwner(ownerId),
+          getOwnerWallet(ownerId),
+          // walletAPI.getRevenueStats(ownerId, new Date(), new Date()),
         ]);
 
       // Load today's bookings for active courts
@@ -52,24 +53,24 @@ const OwnerDashboardScreen = ({ navigation, route }) => {
         const activeCourts = courtsResponse.data.filter(
           (court) => court.status === "active"
         );
-        if (activeCourts.length > 0) {
-          const bookingsResponse = await bookingAPI.getBookingsByOwner(
-            ownerId,
-            {
-              date: new Date().toISOString().split("T")[0],
-              status: "confirmed",
-            }
-          );
-          if (bookingsResponse.success) {
-            todayBookings = bookingsResponse.data;
-          }
-        }
+        // if (activeCourts.length > 0) {
+        //   // const bookingsResponse = await bookingAPI.getBookingsByOwner(
+        //   //   ownerId,
+        //   //   {
+        //   //     date: new Date().toISOString().split("T")[0],
+        //   //     status: "confirmed",
+        //   //   }
+        //   // );
+        //   // if (bookingsResponse.success) {
+        //   //   todayBookings = bookingsResponse.data;
+        //   // }
+        // }
       }
 
       setDashboardData({
         courts: courtsResponse.success ? courtsResponse.data : [],
         todayBookings,
-        revenueStats: revenueResponse.success ? revenueResponse.data : {},
+        // revenueStats: revenueResponse.success ? revenueResponse.data : {},
         walletInfo: walletResponse.success ? walletResponse.data : {},
       });
     } catch (error) {
@@ -98,14 +99,14 @@ const OwnerDashboardScreen = ({ navigation, route }) => {
 
   const getTodayStats = () => {
     const today = new Date().toISOString().split("T")[0];
-    const todayRevenue = dashboardData.revenueStats.dailyRevenue?.[today] || 0;
+    // const todayRevenue = dashboardData.revenueStats.dailyRevenue?.[today] || 0;
     const totalBookings = dashboardData.todayBookings.length;
     const completedBookings = dashboardData.todayBookings.filter(
       (b) => b.status === "completed"
     ).length;
 
     return {
-      revenue: todayRevenue,
+      // revenue: todayRevenue,
       totalBookings,
       completedBookings,
     };
