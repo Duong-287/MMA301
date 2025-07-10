@@ -16,14 +16,30 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import BottomNavigation from "../../components/BottomNavigation";
 import { useAuth } from "../../context/AuthContext";
-
+import { getAllGrounds } from "../../services/grounds";
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState("");
+  const [grounds, setGrounds] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchGrounds();
+  }, []);
+
+  const fetchGrounds = async () => {
+    try {
+      const data = await getAllGrounds();
+      setGrounds(data);
+    } catch (err) {
+      console.log(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     moment.locale("vi");
     const now = moment();
@@ -139,7 +155,7 @@ const HomeScreen = () => {
         </View>
 
         {/* Enhanced Filter chips */}
-        <ScrollView
+        {/* <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.filtersContainer}
@@ -155,10 +171,10 @@ const HomeScreen = () => {
           <TouchableOpacity style={styles.filterChip}>
             <Text style={styles.filterText}>🏸 Cầu lông gần tôi</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </ScrollView> */}
 
         {/* Enhanced Sports categories */}
-        <ScrollView
+        {/* <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.sportsContainer}
@@ -205,10 +221,10 @@ const HomeScreen = () => {
             </View>
             <Text style={styles.sportName}>Bóng chuyền</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </ScrollView> */}
 
         {/* Enhanced Section title */}
-        <View style={styles.sectionTitleContainer}>
+        {/* <View style={styles.sectionTitleContainer}>
           <View style={styles.sectionTitleWrapper}>
             <Text style={styles.sectionIcon}>🌟</Text>
             <Text style={styles.sectionTitle}>Khám phá thêm</Text>
@@ -216,141 +232,105 @@ const HomeScreen = () => {
           <TouchableOpacity style={styles.filterButton}>
             <Text style={styles.filterIcon}>⚙️</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* Enhanced Venue Cards */}
-        <TouchableOpacity style={styles.venueCard}>
-          <View style={styles.venueCardGlow} />
-          <View style={styles.venueCardHeader}>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.star}>⭐</Text>
-              <Text style={styles.rating}>5.0</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              <View style={[styles.tag, { backgroundColor: "#4CAF50" }]}>
-                <Text style={styles.tagText}>Đơn ngày</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#E91E63" }]}>
-                <Text style={styles.tagText}>Sự kiện</Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>🤍</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>📤</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        {/* Render danh sách sân từ API */}
+        {grounds.map((ground, index) => (
+          <TouchableOpacity
+            key={index}
+            style={styles.venueCard}
+            onPress={() => navigation.navigate("CourtDetail", { ground })}
+          >
+            <View style={styles.venueCardGlow} />
 
-          <View style={styles.venueCardContent}>
-            <View style={styles.venueInfo}>
-              <View style={styles.venueLogoContainer}>
-                <View style={styles.venueLogo}>
-                  <Text style={styles.venueLogoText}>🏸</Text>
-                  <View style={styles.venueLogoGlow} />
-                </View>
+            <View style={styles.venueCardHeader}>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.star}>⭐</Text>
+                <Text style={styles.rating}>{ground.rating || "5.0"}</Text>
               </View>
-              <View style={styles.venueDetails}>
-                <Text style={styles.venueName}>
-                  CLB Cầu Lông TPT Sport - Lăng đại học
-                </Text>
-                <Text style={styles.venueAddress}>
-                  📍 Thôn D, Tân Thới Tung, Đông Hòa, Dĩ An, Bình Dương
-                </Text>
-                <View style={styles.venueMetaContainer}>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>🕐</Text>
-                    <Text style={styles.venueMeta}>06:00 - 22:00</Text>
-                  </View>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>📞</Text>
-                    <Text style={styles.venueMeta}>0974857048</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-            <View style={styles.qrContainer}>
-              <View style={styles.qrCode}>
-                <View style={styles.qrPattern}>
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                  <View style={styles.qrDot} />
-                </View>
-                <Text style={styles.qrText}>QR CODE</Text>
-              </View>
-            </View>
-          </View>
 
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
-            <View style={styles.bookButtonGlow} />
+              <View style={styles.tagsContainer}>
+                {(ground.tags || []).map((tag, tagIndex) => (
+                  <View
+                    key={tagIndex}
+                    style={[
+                      styles.tag,
+                      {
+                        backgroundColor:
+                          tag === "Đơn ngày"
+                            ? "#4CAF50"
+                            : tag === "Sự kiện"
+                            ? "#E91E63"
+                            : "#607D8B",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <View style={styles.cardActions}>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.actionIcon}>🤍</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.actionIcon}>📤</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.venueCardContent}>
+              <View style={styles.venueInfo}>
+                <View style={styles.venueLogoContainer}>
+                  <View style={styles.venueLogo}>
+                    <Text style={styles.venueLogoText}>🏸</Text>
+                    <View style={styles.venueLogoGlow} />
+                  </View>
+                </View>
+
+                <View style={styles.venueDetails}>
+                  <Text style={styles.venueName}>{ground.name}</Text>
+                  <Text style={styles.venueAddress}>📍 {ground.address}</Text>
+
+                  <View style={styles.venueMetaContainer}>
+                    <View style={styles.venueMetaItem}>
+                      <Text style={styles.venueMetaIcon}>🕐</Text>
+                      <Text style={styles.venueMeta}>
+                        {ground.openTime || "06:00"} -{" "}
+                        {ground.closeTime || "22:00"}
+                      </Text>
+                    </View>
+                    <View style={styles.venueMetaItem}>
+                      <Text style={styles.venueMetaIcon}>📞</Text>
+                      <Text style={styles.venueMeta}>
+                        {ground.phone || "Đang cập nhật"}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.qrContainer}>
+                <View style={styles.qrCode}>
+                  <View style={styles.qrPattern}>
+                    <View style={styles.qrDot} />
+                    <View style={styles.qrDot} />
+                    <View style={styles.qrDot} />
+                    <View style={styles.qrDot} />
+                  </View>
+                  <Text style={styles.qrText}>QR CODE</Text>
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.bookButton}>
+              <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
+              <View style={styles.bookButtonGlow} />
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-
-        {/* Enhanced Venue Card 2 */}
-        <TouchableOpacity style={styles.venueCard}>
-          <View style={styles.venueCardGlow} />
-          <View style={styles.venueCardHeader}>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.star}>⭐</Text>
-              <Text style={styles.rating}>4.5</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              <View style={[styles.tag, { backgroundColor: "#4CAF50" }]}>
-                <Text style={styles.tagText}>Đơn ngày</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#2196F3" }]}>
-                <Text style={styles.tagText}>Đơn tháng</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#E91E63" }]}>
-                <Text style={styles.tagText}>Sự kiện</Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>🤍</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>📤</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.venueCardContent}>
-            <View style={styles.venueInfo}>
-              <View style={styles.venueLogoContainer}>
-                <View
-                  style={[styles.venueLogo, { backgroundColor: "#FF9800" }]}
-                >
-                  <Text style={styles.venueLogoText}>🏟️</Text>
-                  <View style={styles.venueLogoGlow} />
-                </View>
-              </View>
-              <View style={styles.venueDetails}>
-                <Text style={styles.venueName}>Sân Hoa Thiên Lý</Text>
-                <Text style={styles.venueAddress}>📍 Số 4 Nguyễn Văn Cừ</Text>
-                <View style={styles.venueMetaContainer}>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>🕐</Text>
-                    <Text style={styles.venueMeta}>05:00 - 24:00</Text>
-                  </View>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>📞</Text>
-                    <Text style={styles.venueMeta}>0913223333</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
-            <View style={styles.bookButtonGlow} />
-          </TouchableOpacity>
-        </TouchableOpacity>
+        ))}
 
         {/* Add some bottom spacing */}
         <View style={styles.bottomSpacing} />

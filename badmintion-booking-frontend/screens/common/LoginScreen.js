@@ -17,7 +17,6 @@ import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
 import { login, register, forgotPassword } from "../../services/auth";
 import { useNavigation } from "@react-navigation/native";
-const { width, height } = Dimensions.get("window");
 import { useAuth } from "../../context/AuthContext";
 
 export default function LoginScreen() {
