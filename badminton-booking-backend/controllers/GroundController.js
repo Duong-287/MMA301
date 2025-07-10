@@ -1,4 +1,6 @@
 const Court = require("../models/Court");
+const fs = require("fs");
+const path = require("path");
 
 const getAllGrounds = async (req, res) => { 
   try {
@@ -20,47 +22,83 @@ const getGroundById = async (req, res) => {
     return res.status(500).json({message: "Internal server error"});
   }
  }
-const createGround = async (req, res) => { 
-  const {name , ownerId, address, startTime, endTime, pricePerHour, serviceFee} = req.body;
+const createGround = async (req, res) => {
+  const { name, address, startTime, endTime, latitude, longitude, pricePerHour, serviceFee } = req.body;
+  const { ownerId } = req.user; 
+  const images = req.files.map(file => `/uploads/${file.filename}`);
+
   try {
-    const newCourt = new Court({
+    const newCourt = await Court.create({
       name,
+      images,
       ownerId,
       address,
       startTime,
       endTime,
       pricePerHour,
+      latitude,
+      longitude,
       serviceFee
     });
-    await newCourt.save();
-    return res.status(201).json({message: "Ground created successfully", court: newCourt});
+    return res.status(201).json({ message: "Ground created successfully", court: newCourt });
   } catch (error) {
     console.error("Error creating ground:", error);
-    return res.status(500).json({message: "Internal server error"});
+
+    // rollback file tránh rác
+    req.files.forEach(file => {
+      fs.unlink(path.join(__dirname, "..", "uploads", file.filename), err => {
+        if (err) console.error("Error deleting file:", file.filename, err);
+      });
+    });
+
+    return res.status(500).json({ message: "Internal server error" });
   }
- }
-const updateGround = async (req, res) => { 
-  const {id} = req.params;
-  const {name, address, startTime, endTime, pricePerHour, serviceFee} = req.body;
+};
+
+const updateGround = async (req, res) => {
+  const { id } = req.params;
+  const { name, address, startTime, endTime, pricePerHour, latitude, longitude, serviceFee } = req.body;
+  
+  const newImages = req.files.map(file => `/uploads/${file.filename}`);
+
   try {
-    const updatedCourt = await Court.findByIdAndUpdate(id, {
-      name,
-      address,
-      startTime,
-      endTime,
-      pricePerHour,
-      serviceFee
-    }, {new: true});
-    if (!updatedCourt) {
-      return res.status(404).json({message: "Ground not found"});
+    // Lấy court cũ
+    const existingCourt = await Court.findById(id);
+    if (!existingCourt) {
+      return res.status(404).json({ message: "Ground not found" });
     }
-    return res.status(200).json({message: "Ground updated successfully", court: updatedCourt});
+
+    // Gộp ảnh cũ và ảnh mới
+    const updatedImages = [...existingCourt.images, ...newImages];
+
+    // Update
+    existingCourt.name = name ?? existingCourt.name;
+    existingCourt.address = address ?? existingCourt.address;
+    existingCourt.startTime = startTime ?? existingCourt.startTime;
+    existingCourt.endTime = endTime ?? existingCourt.endTime;
+    existingCourt.pricePerHour = pricePerHour ?? existingCourt.pricePerHour;
+    existingCourt.latitude = latitude ?? existingCourt.latitude;
+    existingCourt.longitude = longitude ?? existingCourt.longitude;
+    existingCourt.serviceFee = serviceFee ?? existingCourt.serviceFee;
+    existingCourt.images = updatedImages;
+
+    await existingCourt.save();
+
+    return res.status(200).json({ message: "Ground updated successfully", court: existingCourt });
   } catch (error) {
     console.error("Error updating ground:", error);
-    return res.status(500).json({message: "Internal server error"});
-  }
 
- }
+    // rollback file nếu lỗi
+    req.files.forEach(file => {
+      fs.unlink(path.join(__dirname, "..", "uploads", file.filename), err => {
+        if (err) console.error("Error deleting file:", file.filename, err);
+      });
+    });
+
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 const deleteGround = async (req, res) => { 
   const {id} = req.params;
   try {
