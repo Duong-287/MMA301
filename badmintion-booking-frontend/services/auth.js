@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://192.168.0.102:3000";
+const API_URL = "http://192.168.0.192:3000";
 
 export const login = async (email, password) => {
   try {
@@ -51,7 +51,6 @@ export const forgotPassword = async (email) => {
     throw { message: "Không thể gửi email khôi phục. Vui lòng thử lại." };
   }
 };
-
 
 export const resetPassword = async (email, otp, password) => {
   try {

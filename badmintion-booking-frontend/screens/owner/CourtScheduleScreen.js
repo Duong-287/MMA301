@@ -9,10 +9,12 @@ import {
   StatusBar,
   Dimensions,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
 const CourtScheduleScreen = () => {
+  const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCourt, setSelectedCourt] = useState("Sân 1");
 
@@ -103,13 +105,17 @@ const CourtScheduleScreen = () => {
     return status === "available" ? "#2E7D32" : "white";
   };
 
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Lịch trình sân</Text>

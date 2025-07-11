@@ -5,9 +5,9 @@ const Wallet = require("../models/Wallet");
 const getBookingHistory = async (req, res) => {
   const userId = req.user.id;
   try {
-    const bookingHistory = await Booking.find({'customerId': userId});
-    return res.status(200).message({"Booking": bookingHistory});
-  } catch(err) {
+    const bookingHistory = await Booking.find({ customerId: userId });
+    return res.status(200).message({ Booking: bookingHistory });
+  } catch (err) {
     console.log("Error at get booking history: " + err);
     return res.status(500).json("Internal system error");
   }
@@ -15,7 +15,7 @@ const getBookingHistory = async (req, res) => {
 
 const cancelBooking = async (req, res) => {
   const userId = req.user.id;
-  const { id:bookingId } = req.params;
+  const { id: bookingId } = req.params;
 
   try {
     const booking = await Booking.findById(bookingId);
@@ -115,7 +115,7 @@ const createBooking = async (req, res) => {
       startTime: start,
       endTime: end,
       totalPrice: price,
-      status: "confirmed"
+      status: "confirmed",
     });
 
     const booked = await newBooking.save();
@@ -159,24 +159,24 @@ const createBooking = async (req, res) => {
 };
 
 const detailBooking = async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   try {
     const bookingDetail = await Booking.findById(id);
-    return res.status(200).json({Booking: bookingDetail});
+    return res.status(200).json({ Booking: bookingDetail });
   } catch (err) {
     console.log("error at view detail booking: " + err);
-    return res.status(500).json({message: "Internal systerm error"});    
+    return res.status(500).json({ message: "Internal systerm error" });
   }
 };
 
 const getBookingById = async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   try {
     const bookingDetail = await Booking.findById(id);
-    return res.status(200).json({Booking: bookingDetail});
+    return res.status(200).json({ Booking: bookingDetail });
   } catch (err) {
     console.log("error at view detail booking: " + err);
-    return res.status(500).json({message: "Internal systerm error"});    
+    return res.status(500).json({ message: "Internal systerm error" });
   }
 };
 

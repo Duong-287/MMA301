@@ -12,7 +12,7 @@ import {
   RefreshControl,
   TextInput,
 } from "react-native";
-import { courtAPI } from "../../services/court";
+import { getCourtsByOwner, updateCourtStatus } from "../../services/court";
 
 const ManageCourtsScreen = ({ navigation, route }) => {
   const { ownerId } = route?.params || {};
@@ -22,7 +22,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all"); // all, active, waiting
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
   useEffect(() => {
     loadCourts();
@@ -35,7 +35,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
   const loadCourts = async () => {
     try {
       setLoading(true);
-      const response = await courtAPI.getCourtsByOwner(ownerId);
+      const response = await getCourtsByOwner(ownerId);
 
       if (response.success) {
         setCourts(response.data);
@@ -100,7 +100,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
           text: "Xác nhận",
           onPress: async () => {
             try {
-              await courtAPI.updateCourtStatus(court._id, newStatus);
+              await updateCourtStatus(court._id, newStatus);
               Alert.alert("Thành công", `Đã ${statusText} sân thành công`);
               loadCourts();
             } catch (error) {
@@ -123,7 +123,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
           style: "destructive",
           onPress: async () => {
             try {
-              await courtAPI.deleteCourt(court._id);
+              await deleteCourt(court._id);
               Alert.alert("Thành công", "Đã xóa sân thành công");
               loadCourts();
             } catch (error) {
