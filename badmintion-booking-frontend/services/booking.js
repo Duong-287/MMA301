@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Base URL - thay đổi theo môi trường của bạn
-const BASE_URL = "http://localhost:3000/owner"; // hoặc URL backend của bạn
+const BASE_URL = "http://192.168.1.5/owner"; // hoặc URL backend của bạn
 
 // Tạo axios instance với config chung
 const api = axios.create({

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = "http://192.168.0.192:3000";
+const API_URL = "http://192.168.1.5:3000";
 
 export const getOwnerWallet = async (ownerId) => {
   try {
