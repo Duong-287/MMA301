@@ -12,12 +12,12 @@ import {
   StatusBar,
   SafeAreaView,
   Dimensions,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavigation from "../../components/BottomNavigation";
 import { useAuth } from "../../context/AuthContext";
 import { getAllGrounds } from "../../services/grounds";
-const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -46,7 +46,20 @@ const HomeScreen = () => {
     const formatted = now.format("dddd, DD/MM/YYYY");
     setCurrentDate(formatted);
   }, []);
-
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ color: "#fff", fontSize: 18 }}>
+            Đang tải dữ liệu...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -153,89 +166,6 @@ const HomeScreen = () => {
             <View style={styles.heartGlow} />
           </TouchableOpacity>
         </View>
-
-        {/* Enhanced Filter chips */}
-        {/* <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtersContainer}
-        >
-          <TouchableOpacity
-            style={[styles.filterChip, styles.filterChipActive]}
-          >
-            <Text style={styles.filterTextActive}>🚗 Xe về gần tôi</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterText}>🏓 Pickleball gần tôi</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterText}>🏸 Cầu lông gần tôi</Text>
-          </TouchableOpacity>
-        </ScrollView> */}
-
-        {/* Enhanced Sports categories */}
-        {/* <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.sportsContainer}
-        >
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#2196F3" }]}>
-              <Text style={styles.sportEmoji}>🏓</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Pickleball</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#4CAF50" }]}>
-              <Text style={styles.sportEmoji}>🏸</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Cầu lông</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#FF5722" }]}>
-              <Text style={styles.sportEmoji}>⚽</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Bóng đá</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#FF9800" }]}>
-              <Text style={styles.sportEmoji}>🎾</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Tennis</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#9C27B0" }]}>
-              <Text style={styles.sportEmoji}>🏐</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>B.Chuyền</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#E91E63" }]}>
-              <Text style={styles.sportEmoji}>🏐</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Bóng chuyền</Text>
-          </TouchableOpacity>
-        </ScrollView> */}
-
-        {/* Enhanced Section title */}
-        {/* <View style={styles.sectionTitleContainer}>
-          <View style={styles.sectionTitleWrapper}>
-            <Text style={styles.sectionIcon}>🌟</Text>
-            <Text style={styles.sectionTitle}>Khám phá thêm</Text>
-          </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </View> */}
-
-        {/* Enhanced Venue Cards */}
-        {/* Render danh sách sân từ API */}
         {grounds.map((ground, index) => (
           <TouchableOpacity
             key={index}
@@ -270,15 +200,6 @@ const HomeScreen = () => {
                   </View>
                 ))}
               </View>
-
-              <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionIcon}>🤍</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionIcon}>📤</Text>
-                </TouchableOpacity>
-              </View>
             </View>
 
             <View style={styles.venueCardContent}>
@@ -298,29 +219,16 @@ const HomeScreen = () => {
                     <View style={styles.venueMetaItem}>
                       <Text style={styles.venueMetaIcon}>🕐</Text>
                       <Text style={styles.venueMeta}>
-                        {ground.openTime || "06:00"} -{" "}
-                        {ground.closeTime || "22:00"}
+                        {ground.startTime || "?"} - {ground.endTime || "?"}
                       </Text>
                     </View>
                     <View style={styles.venueMetaItem}>
                       <Text style={styles.venueMetaIcon}>📞</Text>
                       <Text style={styles.venueMeta}>
-                        {ground.phone || "Đang cập nhật"}
+                        {ground.ownerId?.phone || "Đang cập nhật"}
                       </Text>
                     </View>
                   </View>
-                </View>
-              </View>
-
-              <View style={styles.qrContainer}>
-                <View style={styles.qrCode}>
-                  <View style={styles.qrPattern}>
-                    <View style={styles.qrDot} />
-                    <View style={styles.qrDot} />
-                    <View style={styles.qrDot} />
-                    <View style={styles.qrDot} />
-                  </View>
-                  <Text style={styles.qrText}>QR CODE</Text>
                 </View>
               </View>
             </View>

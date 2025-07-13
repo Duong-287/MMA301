@@ -49,7 +49,7 @@ const pricingData = {
 };
 
 export default function CourtDetailScreen({ navigation }) {
-  const [activeTab, setActiveTab] = useState("services");
+  const [activeTab, setActiveTab] = useState("info");
   const [isFavorite, setIsFavorite] = useState(false);
   const route = useRoute();
   const { ground } = route.params;
@@ -239,20 +239,6 @@ export default function CourtDetailScreen({ navigation }) {
           </View>
         </View>
 
-        {/* Tags */}
-        {/* <View style={styles.tagsContainer}>
-          {court.tags.map((tag, index) => (
-            <View
-              key={index}
-              style={[styles.tag, { backgroundColor: tag.bgColor }]}
-            >
-              <Text style={[styles.tagText, { color: tag.color }]}>
-                {tag.label}
-              </Text>
-            </View>
-          ))}
-        </View> */}
-
         {/* Contact Info */}
         <View style={styles.contactInfo}>
           <View style={styles.contactRow}>
@@ -263,15 +249,14 @@ export default function CourtDetailScreen({ navigation }) {
           <View style={styles.contactRow}>
             <Feather name="clock" size={20} color="#10B981" />
             <Text style={styles.contactText}>
-              {court.openTime} - {court.closeTime}
+              {court.startTime || "?"} - {court.endTime || "?"}
             </Text>
           </View>
 
           <View style={styles.contactRow}>
             <Feather name="phone" size={20} color="#10B981" />
             <View style={styles.phoneContainer}>
-              <Text style={styles.phoneNumber}>{court.phone}</Text>
-              <Text style={styles.phoneNote}> - {court.phoneNote}</Text>
+              <Text style={styles.phoneNumber}>{court.ownerId?.phone}</Text>
             </View>
           </View>
         </View>

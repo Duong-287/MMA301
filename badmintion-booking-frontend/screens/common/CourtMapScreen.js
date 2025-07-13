@@ -8,11 +8,13 @@ import {
   FlatList,
   TouchableOpacity,
   Dimensions,
+  SafeAreaView,
 } from "react-native";
 import MapView, { Marker, Callout } from "react-native-maps";
 import * as Location from "expo-location";
 import { getActiveGrounds } from "../../services/grounds";
 import BottomNavigation from "../../components/BottomNavigation";
+import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -21,7 +23,7 @@ const CourtMapScreen = () => {
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
   const mapRef = useRef(null);
-
+  const navigation = useNavigation();
   useEffect(() => {
     fetchLocation();
     fetchCourts();
@@ -59,74 +61,77 @@ const CourtMapScreen = () => {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <MapView
-        ref={mapRef}
-        style={{ flex: 1 }}
-        initialRegion={{
-          latitude: location.latitude,
-          longitude: location.longitude,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-        showsUserLocation
-      >
-        {courts.map((court) => (
-          <Marker
-            key={court._id}
-            coordinate={{
-              latitude: court.latitude,
-              longitude: court.longitude,
-            }}
-          >
-            <Image
-              source={require("../../assets/images/badminton_map.png")}
-              style={styles.markerIcon}
-            />
-            <Callout tooltip>
-              <View style={styles.callout}>
-                <Text style={styles.name}>{court.name}</Text>
-                <Text style={styles.address}>{court.address}</Text>
-                <Text style={styles.price}>
-                  Giá: {court.pricePerHour.toLocaleString()}đ/giờ
-                </Text>
-              </View>
-            </Callout>
-          </Marker>
-        ))}
-      </MapView>
-
-      {/* Mini card sân */}
-      <View style={styles.cardContainer}>
-        <FlatList
-          horizontal
-          data={courts}
-          keyExtractor={(item) => item._id}
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() => focusToCourt(item)}
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        <MapView
+          ref={mapRef}
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: location.latitude,
+            longitude: location.longitude,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1,
+          }}
+          showsUserLocation
+        >
+          {courts.map((ground) => (
+            <Marker
+              key={ground._id}
+              coordinate={{
+                latitude: ground.latitude,
+                longitude: ground.longitude,
+              }}
+              onPress={() => navigation.navigate("CourtDetail", { ground })}
             >
               <Image
-                source={{ uri: item.images?.[0] }}
-                style={styles.cardImage}
+                source={require("../../assets/images/badminton_map.png")}
+                style={styles.markerIcon}
               />
-              <View style={styles.cardContent}>
-                <Text numberOfLines={1} style={styles.cardName}>
-                  {item.name}
-                </Text>
-                <Text numberOfLines={1} style={styles.cardAddress}>
-                  {item.address}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-      </View>
+              <Callout tooltip>
+                <View style={styles.callout}>
+                  <Text style={styles.name}>{ground.name}</Text>
+                  <Text style={styles.address}>{ground.address}</Text>
+                  <Text style={styles.price}>
+                    Giá: {ground.pricePerHour.toLocaleString()}đ/giờ
+                  </Text>
+                </View>
+              </Callout>
+            </Marker>
+          ))}
+        </MapView>
 
-      <BottomNavigation />
-    </View>
+        {/* Mini card sân */}
+        <View style={styles.cardContainer}>
+          <FlatList
+            horizontal
+            data={courts}
+            keyExtractor={(item) => item._id}
+            showsHorizontalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() => focusToCourt(item)}
+              >
+                <Image
+                  source={{ uri: item.images?.[0] }}
+                  style={styles.cardImage}
+                />
+                <View style={styles.cardContent}>
+                  <Text numberOfLines={1} style={styles.cardName}>
+                    {item.name}
+                  </Text>
+                  <Text numberOfLines={1} style={styles.cardAddress}>
+                    {item.address}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+
+        <BottomNavigation />
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -135,6 +140,8 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     resizeMode: "contain",
+    borderRadius: 18,
+    overflow: "hidden",
   },
   callout: {
     backgroundColor: "#fff",

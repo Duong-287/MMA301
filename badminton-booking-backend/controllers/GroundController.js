@@ -6,7 +6,7 @@ const getAllGrounds = async (req, res) => {
   try {
     const courtList = await Court.find().populate(
       "ownerId",
-      "_id username email fullName phone address"
+      "_id email fullName phone address"
     );
     console.log("Fetching all grounds:", courtList);
     return res.status(200).json(courtList);
@@ -21,7 +21,7 @@ const getGroundById = async (req, res) => {
     const { id } = req.params;
     const court = await Court.findById(id).populate(
       "ownerId",
-      "_id username fullName email phone address"
+      "_id fullName email phone address"
     );
     return res.status(200).json({ court });
   } catch (err) {
