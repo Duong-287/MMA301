@@ -142,10 +142,25 @@ const deleteGround = async (req, res) => {
   }
 };
 
+const getActiveGrounds = async (req, res) => {
+  try {
+    const activeCourts = await Court.find({ status: "active" }).populate(
+      "ownerId",
+      "_id username email fullName phone address"
+    );
+
+    return res.status(200).json(activeCourts);
+  } catch (error) {
+    console.error("Error fetching active grounds:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getAllGrounds,
   getGroundById,
   createGround,
   updateGround,
   deleteGround,
+  getActiveGrounds,
 };

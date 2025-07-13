@@ -28,7 +28,10 @@ export default function BottomNavigation({ activeTab }) {
             Trang chủ
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
+        <TouchableOpacity
+          style={styles.navItem}
+          onPress={() => navigation.navigate("CourtMapScreen")}
+        >
           <Text style={styles.navIcon}>🗺️</Text>
           <Text style={styles.navText}>Bản đồ</Text>
         </TouchableOpacity>
