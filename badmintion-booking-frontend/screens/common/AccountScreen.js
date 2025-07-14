@@ -47,7 +47,7 @@ const AccountScreen = () => {
   };
 
   const handleProfile = () => {
-    console.log("Show profile");
+    navigation.navigate("Profile");
   };
 
   const handlePassword = () => {

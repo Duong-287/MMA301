@@ -13,7 +13,6 @@ import Feather from "react-native-vector-icons/Feather";
 import { useRoute } from "@react-navigation/native";
 import BottomNavigation from "../../components/BottomNavigation";
 import { getReviewsByCourtId } from "../../services/grounds";
-import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const { width } = Dimensions.get("window");
 

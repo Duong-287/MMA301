@@ -148,7 +148,7 @@ const HomeScreen = () => {
         style={styles.mainContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Enhanced Search section */}
+        {/* Search section */}
         <View style={styles.searchSection}>
           <View style={styles.searchInputContainer}>
             <View style={styles.searchIconContainer}>
@@ -172,14 +172,7 @@ const HomeScreen = () => {
             style={styles.venueCard}
             onPress={() => navigation.navigate("CourtDetail", { ground })}
           >
-            <View style={styles.venueCardGlow} />
-
             <View style={styles.venueCardHeader}>
-              <View style={styles.ratingContainer}>
-                <Text style={styles.star}>⭐</Text>
-                <Text style={styles.rating}>{ground.rating || "5.0"}</Text>
-              </View>
-
               <View style={styles.tagsContainer}>
                 {(ground.tags || []).map((tag, tagIndex) => (
                   <View

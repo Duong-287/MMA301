@@ -12,15 +12,8 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// Mock icons - trong thực tế bạn sẽ sử dụng react-native-vector-icons
-const Icon = ({ name, size = 20, color = "#666" }) => (
-  <View style={[styles.iconPlaceholder, { width: size, height: size }]}>
-    <Text style={{ color, fontSize: size * 0.6 }}>
-      {name.charAt(0).toUpperCase()}
-    </Text>
-  </View>
-);
+import BottomNavigation from "../../components/BottomNavigation";
+import Feather from "react-native-vector-icons/Feather";
 
 const { width } = Dimensions.get("window");
 
@@ -43,13 +36,6 @@ export default function ProfileScreen() {
     experience: "3 năm",
     bio: "Yêu thích cầu lông, thường chơi vào cuối tuần. Tìm kiếm đối thủ cùng trình độ để cùng luyện tập.",
   });
-
-  const stats = [
-    { label: "Trận đã chơi", value: "127", icon: "T", color: "#F59E0B" },
-    { label: "Giờ chơi", value: "89h", icon: "C", color: "#3B82F6" },
-    { label: "Sân yêu thích", value: "A1", icon: "S", color: "#10B981" },
-    { label: "Tỷ lệ thắng", value: "68%", icon: "%", color: "#8B5CF6" },
-  ];
 
   const recentBookings = [
     {
@@ -82,10 +68,10 @@ export default function ProfileScreen() {
   ];
 
   const tabs = [
-    { id: "info", label: "Thông tin", icon: "U" },
-    { id: "history", label: "Lịch sử", icon: "H" },
-    { id: "achievements", label: "Thành tích", icon: "A" },
-    { id: "settings", label: "Cài đặt", icon: "S" },
+    { id: "info", label: "Thông tin", icon: "user" },
+    { id: "history", label: "Lịch sử", icon: "clock" },
+    { id: "achievements", label: "Thành tích", icon: "award" },
+    { id: "settings", label: "Cài đặt", icon: "settings" },
   ];
 
   const handleSave = () => {
@@ -109,7 +95,7 @@ export default function ProfileScreen() {
           </Text>
         </View>
         <TouchableOpacity style={styles.cameraButton}>
-          <Icon name="camera" size={16} color="#666" />
+          <Feather name="camera" size={16} color="#666" />
         </TouchableOpacity>
       </View>
 
@@ -123,15 +109,15 @@ export default function ProfileScreen() {
 
         <View style={styles.contactInfo}>
           <View style={styles.contactItem}>
-            <Icon name="mail" size={14} color="#666" />
+            <Feather name="mail" size={14} color="#666" />
             <Text style={styles.contactText}>{profile.email}</Text>
           </View>
           <View style={styles.contactItem}>
-            <Icon name="phone" size={14} color="#666" />
+            <Feather name="phone" size={14} color="#666" />
             <Text style={styles.contactText}>{profile.phone}</Text>
           </View>
           <View style={styles.contactItem}>
-            <Icon name="location" size={14} color="#666" />
+            <Feather name="location" size={14} color="#666" />
             <Text style={styles.contactText}>{profile.location}</Text>
           </View>
         </View>
@@ -143,29 +129,11 @@ export default function ProfileScreen() {
         style={styles.editButton}
         onPress={isEditing ? handleSave : () => setIsEditing(true)}
       >
-        <Icon name={isEditing ? "save" : "edit"} size={16} color="#fff" />
+        <Feather name={isEditing ? "save" : "edit"} size={16} color="#fff" />
         <Text style={styles.editButtonText}>
           {isEditing ? "Lưu" : "Chỉnh sửa"}
         </Text>
       </TouchableOpacity>
-    </View>
-  );
-
-  const renderStats = () => (
-    <View style={styles.statsContainer}>
-      {stats.map((stat, index) => (
-        <View key={index} style={styles.statCard}>
-          <View
-            style={[styles.statIcon, { backgroundColor: stat.color + "20" }]}
-          >
-            <Text style={[styles.statIconText, { color: stat.color }]}>
-              {stat.icon}
-            </Text>
-          </View>
-          <Text style={styles.statValue}>{stat.value}</Text>
-          <Text style={styles.statLabel}>{stat.label}</Text>
-        </View>
-      ))}
     </View>
   );
 
@@ -177,7 +145,7 @@ export default function ProfileScreen() {
           style={[styles.tab, activeTab === tab.id && styles.activeTab]}
           onPress={() => setActiveTab(tab.id)}
         >
-          <Icon
+          <Feather
             name={tab.icon}
             size={16}
             color={activeTab === tab.id ? "#fff" : "#666"}
@@ -199,7 +167,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="user" size={20} color="#10B981" />
+          <Feather name="user" size={20} color="#10B981" />
           <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
         </View>
 
@@ -248,7 +216,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="target" size={20} color="#3B82F6" />
+          <Feather name="target" size={20} color="#3B82F6" />
           <Text style={styles.sectionTitle}>Thông tin cầu lông</Text>
         </View>
 
@@ -298,7 +266,7 @@ export default function ProfileScreen() {
   const renderHistory = () => (
     <View style={styles.tabContent}>
       <View style={styles.sectionHeader}>
-        <Icon name="calendar" size={20} color="#10B981" />
+        <Feather name="calendar" size={20} color="#10B981" />
         <Text style={styles.sectionTitle}>Lịch sử đặt sân</Text>
       </View>
 
@@ -306,7 +274,7 @@ export default function ProfileScreen() {
         <View key={index} style={styles.bookingCard}>
           <View style={styles.bookingInfo}>
             <View style={styles.bookingIcon}>
-              <Icon name="calendar" size={16} color="#10B981" />
+              <Feather name="calendar" size={16} color="#10B981" />
             </View>
             <View style={styles.bookingDetails}>
               <Text style={styles.bookingCourt}>{booking.court}</Text>
@@ -334,7 +302,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="trophy" size={20} color="#F59E0B" />
+          <Feather name="trophy" size={20} color="#F59E0B" />
           <Text style={styles.sectionTitle}>Huy hiệu</Text>
         </View>
 
@@ -392,7 +360,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="bell" size={20} color="#3B82F6" />
+          <Feather name="bell" size={20} color="#3B82F6" />
           <Text style={styles.sectionTitle}>Thông báo</Text>
         </View>
 
@@ -450,7 +418,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="shield" size={20} color="#10B981" />
+          <Feather name="shield" size={20} color="#10B981" />
           <Text style={styles.sectionTitle}>Bảo mật</Text>
         </View>
 
@@ -500,10 +468,10 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         {renderHeader()}
-        {renderStats()}
         {renderTabs()}
         {renderTabContent()}
       </ScrollView>
+      <BottomNavigation />
     </SafeAreaView>
   );
 }
