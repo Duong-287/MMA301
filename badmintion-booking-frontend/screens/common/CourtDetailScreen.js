@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,82 +9,44 @@ import {
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import Feather from "react-native-vector-icons/Feather";
 import { useRoute } from "@react-navigation/native";
+import BottomNavigation from "../../components/BottomNavigation";
+import { getReviewsByCourtId } from "../../services/grounds";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const { width } = Dimensions.get("window");
-
-const pricingData = {
-  membership: {
-    packages: [
-      {
-        name: "Gói cơ bản",
-        timeSlots: [
-          { day: "Thứ 2", time: "05:00 - 07:00", price: "100,000 VND" },
-          { day: "Thứ 2", time: "07:00 - 09:00", price: "120,000 VND" },
-          { day: "Thứ 3", time: "05:00 - 07:00", price: "100,000 VND" },
-          { day: "Thứ 3", time: "07:00 - 09:00", price: "120,000 VND" },
-          // Additional time slots can be added here
-        ],
-      },
-      // Additional packages can be added here
-    ],
-  },
-  pickleball: {
-    packages: [
-      {
-        name: "Sân ngoài trời",
-        timeSlots: [
-          { day: "Thứ 2", time: "05:00 - 07:00", price: "150,000 VND" },
-          { day: "Thứ 2", time: "07:00 - 09:00", price: "170,000 VND" },
-          { day: "Thứ 3", time: "05:00 - 07:00", price: "150,000 VND" },
-          { day: "Thứ 3", time: "07:00 - 09:00", price: "170,000 VND" },
-          // Additional time slots can be added here
-        ],
-      },
-      // Additional packages can be added here
-    ],
-  },
-};
 
 export default function CourtDetailScreen({ navigation }) {
   const [activeTab, setActiveTab] = useState("info");
   const [isFavorite, setIsFavorite] = useState(false);
+  const [courtReviews, setCourtReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
   const route = useRoute();
   const { ground } = route.params;
   const court = ground || {};
 
-  const courtDetails = {
-    description:
-      "Nestworld Badminton - Pickleball là một trong những câu lạc bộ thể thao hàng đầu tại TP.HCM, chuyên cung cấp dịch vụ cho môn cầu lông và pickleball. Với không gian rộng rãi, thoáng mát và đầy đủ tiện nghi hiện đại.",
-    facilities: [
-      { name: "Sân cầu lông tiêu chuẩn", icon: "activity", available: true },
-      { name: "Sân pickleball ngoài trời", icon: "wind", available: true },
-      { name: "Điều hòa nhiệt độ", icon: "thermometer", available: true },
-      { name: "Hệ thống âm thanh", icon: "volume-2", available: true },
-      { name: "Đèn LED chuyên dụng", icon: "sun", available: true },
-      { name: "Phòng thay đồ", icon: "briefcase", available: true },
-      { name: "Khu vực nghỉ ngơi", icon: "coffee", available: true },
-      { name: "Bãi đậu xe", icon: "truck", available: true },
-      { name: "Wifi miễn phí", icon: "wifi", available: true },
-      { name: "Nước uống miễn phí", icon: "droplet", available: true },
-    ],
-    rules: [
-      "Vui lòng đặt sân trước ít nhất 2 tiếng",
-      "Hủy lịch trước 4 tiếng để được hoàn tiền",
-      "Không mang đồ ăn từ bên ngoài vào",
-      "Giữ gìn vệ sinh chung",
-      "Không hút thuốc trong khu vực sân",
-      "Tuân thủ giờ giấc quy định",
-    ],
-    policies: [
-      "Học sinh, sinh viên được giảm 10% khi có thẻ",
-      "Đặt sân cố định hàng tuần được giảm 15%",
-      "Thành viên VIP được ưu tiên đặt sân",
-      "Miễn phí nước uống cho khách đặt trên 2 tiếng",
-    ],
-  };
+  const tabs = [
+    { id: "info", label: "Thông tin" },
+    { id: "services", label: "Dịch vụ" },
+    { id: "images", label: "Hình ảnh" },
+    { id: "reviews", label: "Đánh giá" },
+  ];
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        setLoadingReviews(true);
+        const reviews = await getReviewsByCourtId(court._id);
+        setCourtReviews(reviews);
+      } catch (error) {
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+    if (activeTab === "reviews" && court?._id) {
+      fetchReviews();
+    }
+  }, [activeTab, court.id]);
 
   const courtImages = [
     {
@@ -125,69 +87,11 @@ export default function CourtDetailScreen({ navigation }) {
     },
   ];
 
-  const courtReviews = [
-    {
-      id: 1,
-      userName: "Nguyễn Văn An",
-      avatar: "A",
-      rating: 5,
-      date: "2 ngày trước",
-      comment:
-        "Sân rất đẹp và sạch sẽ. Nhân viên phục vụ nhiệt tình. Giá cả hợp lý, sẽ quay lại lần sau!",
-      helpful: 12,
-      images: ["/placeholder.svg?height=100&width=100"],
-    },
-    {
-      id: 2,
-      userName: "Trần Thị Bình",
-      avatar: "B",
-      rating: 5,
-      date: "1 tuần trước",
-      comment:
-        "Mình rất thích sân pickleball ở đây. Không gian thoáng mát, đèn sáng đủ. Đặc biệt là có ưu đãi cho sinh viên nữa.",
-      helpful: 8,
-      images: [],
-    },
-    {
-      id: 3,
-      userName: "Lê Văn Cường",
-      avatar: "C",
-      rating: 4,
-      date: "2 tuần trước",
-      comment:
-        "Sân tốt, tiện nghi đầy đủ. Chỉ có điều bãi đậu xe hơi nhỏ vào giờ cao điểm. Nhìn chung vẫn rất hài lòng.",
-      helpful: 5,
-      images: [
-        "/placeholder.svg?height=100&width=100",
-        "/placeholder.svg?height=100&width=100",
-      ],
-    },
-    {
-      id: 4,
-      userName: "Phạm Thị Dung",
-      avatar: "D",
-      rating: 5,
-      date: "3 tuần trước",
-      comment:
-        "Lần đầu chơi pickleball ở đây, cảm thấy rất thích. Huấn luyện viên hướng dẫn rất tận tình. Sẽ giới thiệu bạn bè đến đây.",
-      helpful: 15,
-      images: [],
-    },
-  ];
-
-  const tabs = [
-    { id: "info", label: "Thông tin" },
-    { id: "services", label: "Dịch vụ" },
-    { id: "images", label: "Hình ảnh" },
-    { id: "reviews", label: "Đánh giá" },
-  ];
-
   const renderHeader = () => (
     <View style={styles.headerContainer}>
       <View style={styles.headerBackground}>
         <View style={styles.headerOverlay} />
-        <Text style={styles.headerTitle}>CÂU LẠC BỘ CẦU LÔNG</Text>
-        <Text style={styles.headerSubtitle}>NESTWORLD</Text>
+        <Text style={styles.headerSubtitle}>{court.name}</Text>
       </View>
 
       {/* Navigation Bar */}
@@ -220,14 +124,6 @@ export default function CourtDetailScreen({ navigation }) {
 
   const renderCourtInfo = () => (
     <View style={styles.courtInfoContainer}>
-      {/* Rating */}
-      <View style={styles.ratingContainer}>
-        <Feather name="star" size={20} color="#FFD700" />
-        <Text style={styles.ratingText}>
-          {court.rating} ({court.reviewCount} đánh giá)
-        </Text>
-      </View>
-
       {/* Court Details Card */}
       <View style={styles.courtCard}>
         <View style={styles.courtHeader}>
@@ -285,113 +181,52 @@ export default function CourtDetailScreen({ navigation }) {
     </View>
   );
 
-  const renderPricingTable = (data, title) => (
+  const renderPricingTable = (court) => (
     <View style={styles.pricingSection}>
-      <Text style={styles.pricingSectionTitle}>{title}</Text>
+      <Text style={styles.pricingSectionTitle}>BẢNG GIÁ THUÊ SÂN</Text>
 
-      {data.packages.map((pkg, pkgIndex) => (
-        <View key={pkgIndex} style={styles.pricingTable}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>{pkg.name}</Text>
+      <View style={styles.pricingTable}>
+        {/* Header Row */}
+        <View style={styles.tableRow}>
+          <View style={[styles.tableCell, styles.tableCellHeader, { flex: 1 }]}>
+            <Text style={styles.tableCellHeaderText}>Loại phí</Text>
           </View>
-
-          {pkg.timeSlots.map((slot, slotIndex) => {
-            if (slotIndex === 0) {
-              // Header row
-              return (
-                <View key={slotIndex} style={styles.tableRow}>
-                  <View
-                    style={[
-                      styles.tableCell,
-                      styles.tableCellHeader,
-                      { flex: 1 },
-                    ]}
-                  >
-                    <Text style={styles.tableCellHeaderText}>
-                      {slot.day || slot.time}
-                    </Text>
-                  </View>
-                  <View
-                    style={[
-                      styles.tableCell,
-                      styles.tableCellHeader,
-                      { flex: 1 },
-                    ]}
-                  >
-                    <Text style={styles.tableCellHeaderText}>
-                      {slot.time || slot.weekday || "Khung giờ"}
-                    </Text>
-                  </View>
-                  {slot.weekday && (
-                    <>
-                      <View
-                        style={[
-                          styles.tableCell,
-                          styles.tableCellHeader,
-                          { flex: 1 },
-                        ]}
-                      >
-                        <Text style={styles.tableCellHeaderText}>Có định</Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.tableCell,
-                          styles.tableCellHeader,
-                          { flex: 1 },
-                        ]}
-                      >
-                        <Text style={styles.tableCellHeaderText}>Vắng lại</Text>
-                      </View>
-                    </>
-                  )}
-                  {!slot.weekday && (
-                    <View
-                      style={[
-                        styles.tableCell,
-                        styles.tableCellHeader,
-                        { flex: 1 },
-                      ]}
-                    >
-                      <Text style={styles.tableCellHeaderText}>
-                        {slot.price || "Giá"}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              );
-            }
-
-            // Data rows
-            return (
-              <View key={slotIndex} style={styles.tableRow}>
-                <View style={[styles.tableCell, { flex: 1 }]}>
-                  <Text style={styles.tableCellText}>{slot.day}</Text>
-                </View>
-                <View style={[styles.tableCell, { flex: 1 }]}>
-                  <Text style={styles.tableCellText}>{slot.time}</Text>
-                </View>
-                <View style={[styles.tableCell, { flex: 1 }]}>
-                  <Text style={styles.tableCellText}>{slot.weekday}</Text>
-                </View>
-                {slot.weekend && (
-                  <View style={[styles.tableCell, { flex: 1 }]}>
-                    <Text style={styles.tableCellText}>{slot.weekend}</Text>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+          <View style={[styles.tableCell, styles.tableCellHeader, { flex: 1 }]}>
+            <Text style={styles.tableCellHeaderText}>Giá (VNĐ)</Text>
+          </View>
         </View>
-      ))}
+
+        {/* Giá thuê theo giờ */}
+        <View style={styles.tableRow}>
+          <View style={[styles.tableCell, { flex: 1 }]}>
+            <Text style={styles.tableCellText}>Giá thuê / giờ</Text>
+          </View>
+          <View style={[styles.tableCell, { flex: 1 }]}>
+            <Text style={styles.tableCellText}>
+              {court.pricePerHour.toLocaleString()} đ
+            </Text>
+          </View>
+        </View>
+
+        {/* Phí dịch vụ nếu có */}
+        <View style={styles.tableRow}>
+          <View style={[styles.tableCell, { flex: 1 }]}>
+            <Text style={styles.tableCellText}>Phí dịch vụ</Text>
+          </View>
+          <View style={[styles.tableCell, { flex: 1 }]}>
+            <Text style={styles.tableCellText}>
+              {court.serviceFee.toLocaleString()} đ
+            </Text>
+          </View>
+        </View>
+      </View>
     </View>
   );
 
   const renderServices = () => (
     <View style={styles.servicesContainer}>
       <Text style={styles.servicesTitle}>BẢNG GIÁ SÂN</Text>
-
-      {renderPricingTable(pricingData.membership, "Gói hội viên")}
-      {renderPricingTable(pricingData.pickleball, "Pickleball ngoài trời")}
+      {renderPricingTable(court)}
     </View>
   );
 
@@ -400,14 +235,14 @@ export default function CourtDetailScreen({ navigation }) {
       {/* Mô tả */}
       <View style={styles.infoSection}>
         <Text style={styles.infoSectionTitle}>Giới thiệu</Text>
-        <Text style={styles.infoDescription}>{courtDetails.description}</Text>
+        <Text style={styles.infoDescription}>{ground.description}</Text>
       </View>
 
       {/* Tiện nghi */}
       <View style={styles.infoSection}>
         <Text style={styles.infoSectionTitle}>Tiện nghi</Text>
         <View style={styles.facilitiesGrid}>
-          {courtDetails.facilities.map((facility, index) => (
+          {ground.facilities.map((facility, index) => (
             <View key={index} style={styles.facilityItem}>
               <Feather name={facility.icon} size={20} color="#10B981" />
               <Text style={styles.facilityText}>{facility.name}</Text>
@@ -422,7 +257,7 @@ export default function CourtDetailScreen({ navigation }) {
       {/* Quy định */}
       <View style={styles.infoSection}>
         <Text style={styles.infoSectionTitle}>Quy định sân</Text>
-        {courtDetails.rules.map((rule, index) => (
+        {ground.rules.map((rule, index) => (
           <View key={index} style={styles.ruleItem}>
             <Text style={styles.ruleBullet}>•</Text>
             <Text style={styles.ruleText}>{rule}</Text>
@@ -433,7 +268,7 @@ export default function CourtDetailScreen({ navigation }) {
       {/* Chính sách */}
       <View style={styles.infoSection}>
         <Text style={styles.infoSectionTitle}>Chính sách ưu đãi</Text>
-        {courtDetails.policies.map((policy, index) => (
+        {ground.policies.map((policy, index) => (
           <View key={index} style={styles.policyItem}>
             <Feather name="gift" size={16} color="#F59E0B" />
             <Text style={styles.policyText}>{policy}</Text>
@@ -464,85 +299,97 @@ export default function CourtDetailScreen({ navigation }) {
     </View>
   );
 
-  const renderReviews = () => (
-    <View style={styles.reviewsContainer}>
-      {/* Tổng quan đánh giá */}
-      <View style={styles.reviewSummary}>
-        <View style={styles.ratingOverview}>
-          <Text style={styles.overallRating}>5.0</Text>
-          <View style={styles.starsContainer}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Feather key={star} name="star" size={16} color="#F59E0B" />
-            ))}
+  const renderReviews = () => {
+    const averageRating =
+      courtReviews.length > 0
+        ? (
+            courtReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+            courtReviews.length
+          ).toFixed(1)
+        : "0.0";
+
+    return (
+      <View style={styles.reviewsContainer}>
+        {/* Tổng quan đánh giá */}
+        <View style={styles.reviewSummary}>
+          <View style={styles.ratingOverview}>
+            <Text style={styles.overallRating}>{averageRating}</Text>
+            <View style={styles.starsContainer}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Feather key={star} name="star" size={16} color="#F59E0B" />
+              ))}
+            </View>
+            <Text style={styles.reviewCount}>
+              Dựa trên {courtReviews.length} đánh giá
+            </Text>
           </View>
-          <Text style={styles.reviewCount}>
-            Dựa trên {courtReviews.length} đánh giá
-          </Text>
+
+          <TouchableOpacity style={styles.writeReviewButton}>
+            <Feather name="edit" size={16} color="#10B981" />
+            <Text style={styles.writeReviewText}>Viết đánh giá</Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.writeReviewButton}>
-          <Feather name="edit" size={16} color="#10B981" />
-          <Text style={styles.writeReviewText}>Viết đánh giá</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Danh sách đánh giá */}
-      <View style={styles.reviewsList}>
-        {courtReviews.map((review) => (
-          <View key={review.id} style={styles.reviewItem}>
-            <View style={styles.reviewHeader}>
-              <View style={styles.reviewerInfo}>
-                <View style={styles.reviewerAvatar}>
-                  <Text style={styles.reviewerAvatarText}>{review.avatar}</Text>
-                </View>
-                <View style={styles.reviewerDetails}>
-                  <Text style={styles.reviewerName}>{review.userName}</Text>
-                  <View style={styles.reviewRating}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Feather
-                        key={star}
-                        name="star"
-                        size={12}
-                        color={star <= review.rating ? "#F59E0B" : "#E5E7EB"}
-                      />
-                    ))}
-                    <Text style={styles.reviewDate}> • {review.date}</Text>
+        {/* Danh sách đánh giá */}
+        <View style={styles.reviewsList}>
+          {courtReviews.map((review) => (
+            <View key={review.id} style={styles.reviewItem}>
+              <View style={styles.reviewHeader}>
+                <View style={styles.reviewerInfo}>
+                  <View style={styles.reviewerAvatar}>
+                    <Text style={styles.reviewerAvatarText}>
+                      {review.avatar || review.userName?.charAt(0) || "U"}
+                    </Text>
                   </View>
-                </View>
-              </View>
-            </View>
-
-            <Text style={styles.reviewComment}>{review.comment}</Text>
-
-            {review.images.length > 0 && (
-              <View style={styles.reviewImages}>
-                {review.images.map((image, index) => (
-                  <View key={index} style={styles.reviewImageWrapper}>
-                    <View style={styles.reviewImagePlaceholder}>
-                      <Feather name="image" size={20} color="#9CA3AF" />
+                  <View style={styles.reviewerDetails}>
+                    <Text style={styles.reviewerName}>{review.userName}</Text>
+                    <View style={styles.reviewRating}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Feather
+                          key={star}
+                          name="star"
+                          size={12}
+                          color={star <= review.rating ? "#F59E0B" : "#E5E7EB"}
+                        />
+                      ))}
+                      <Text style={styles.reviewDate}> • {review.date}</Text>
                     </View>
                   </View>
-                ))}
+                </View>
               </View>
-            )}
 
-            <View style={styles.reviewActions}>
-              <TouchableOpacity style={styles.helpfulButton}>
-                <Feather name="thumbs-up" size={14} color="#6B7280" />
-                <Text style={styles.helpfulText}>
-                  Hữu ích ({review.helpful})
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.replyButton}>
-                <Feather name="corner-up-left" size={14} color="#6B7280" />
-                <Text style={styles.replyText}>Trả lời</Text>
-              </TouchableOpacity>
+              <Text style={styles.reviewComment}>{review.comment}</Text>
+
+              {Array.isArray(review.images) && review.images.length > 0 && (
+                <View style={styles.reviewImages}>
+                  {review.images.map((image, index) => (
+                    <View key={index} style={styles.reviewImageWrapper}>
+                      <View style={styles.reviewImagePlaceholder}>
+                        <Feather name="image" size={20} color="#9CA3AF" />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              <View style={styles.reviewActions}>
+                <TouchableOpacity style={styles.helpfulButton}>
+                  <Feather name="thumbs-up" size={14} color="#6B7280" />
+                  <Text style={styles.helpfulText}>
+                    Hữu ích ({review.helpful})
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.replyButton}>
+                  <Feather name="corner-up-left" size={14} color="#6B7280" />
+                  <Text style={styles.replyText}>Trả lời</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -574,6 +421,7 @@ export default function CourtDetailScreen({ navigation }) {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
+      <BottomNavigation />
     </SafeAreaView>
   );
 }

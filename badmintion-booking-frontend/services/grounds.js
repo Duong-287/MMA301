@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://192.168.1.5:3000";
+import { API_URL } from "../utils/config";
 
 export const getAllGrounds = async () => {
     try {
@@ -24,3 +24,16 @@ export const getActiveGrounds = async () => {
         throw { message: "Không thể lấy danh sách sân hoạt động. Vui lòng thử lại." };
     }
 }
+export const getReviewsByCourtId = async (courtId) => {
+  try {
+    const response = await axios.get(`${API_URL}/grounds/review`, {
+      params: { courtId }, 
+    });
+    return response.data;
+  } catch (error) {
+    if (__DEV__) {
+      console.log("Error fetching reviews:", error?.response?.data || error.message);
+    }
+    throw { message: "Không thể lấy đánh giá. Vui lòng thử lại." };
+  }
+};
