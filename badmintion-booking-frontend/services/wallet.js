@@ -14,7 +14,9 @@ export const getOwnerWallet = async (ownerId) => {
 
     return { success: true, data: response.data.wallet };
   } catch (error) {
-    console.log("Lỗi lấy ví:", error);
-    return { success: false, message: "Không thể lấy ví." };
+    if (__DEV__) {
+      console.log("Lỗi lấy ví:", error);
+      return { success: false, message: "Không thể lấy ví." };
+    }
   }
 };
