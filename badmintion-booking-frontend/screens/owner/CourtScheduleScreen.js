@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { bookingAPI } from "../../services/booking";
 
 const { width } = Dimensions.get("window");
 
@@ -17,9 +18,25 @@ const CourtScheduleScreen = () => {
   const navigation = useNavigation();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCourt, setSelectedCourt] = useState("Sân 1");
+  
+  // State lưu danh sách sân
+  const [courtList, setCourtList] = useState([]);
 
-  // Mock data for courts
-  const courts = ["Sân 1", "Sân 2", "Sân 3", "Sân 4"];
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const dataBooking = await bookingAPI.getBookingsByOwner();
+        setCourtList(dataBooking?.data || []);
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách sân:", error.message);
+      }
+    };
+
+    fetchBookings();
+  }, []);
+
+  // Lấy mảng tên sân
+  const courts = courtList.map(court => court.name) || ["null"];
 
   // Mock data for time slots
   const timeSlots = [

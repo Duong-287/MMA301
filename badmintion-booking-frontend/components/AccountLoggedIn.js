@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   StatusBar,
   ScrollView,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import BottomNavigation from "./BottomNavigation";
 
 const AccountLoggedIn = ({
@@ -26,6 +28,26 @@ const AccountLoggedIn = ({
   onSettingsPress,
   onLogoutPress,
 }) => {
+  const [wallet, setWallet] = useState(null);
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token"); 
+        const res = await axios.get("http://localhost:5000/api/wallet", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setWallet(res.data.wallet);
+      } catch (error) {
+        console.error("Error fetching wallet:", error);
+      }
+    };
+
+    fetchWallet();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -34,11 +56,9 @@ const AccountLoggedIn = ({
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with colorful background */}
         <View style={styles.headerBackground}>
           <View style={styles.headerOverlay}>
             <View style={styles.headerContent}>
-              {/* Action Buttons */}
               <View style={styles.topActions}>
                 <TouchableOpacity
                   style={styles.actionButton}
@@ -50,7 +70,6 @@ const AccountLoggedIn = ({
                     <Text style={styles.actionIconText}>🔔</Text>
                   </View>
                 </TouchableOpacity>
-
                 <TouchableOpacity
                   style={styles.actionButton}
                   onPress={onCalendarPress}
@@ -63,17 +82,31 @@ const AccountLoggedIn = ({
                 </TouchableOpacity>
               </View>
 
-              {/* User Avatar */}
               <View style={styles.avatarContainer}>
                 <View style={styles.userAvatar}>
                   <Text style={styles.userInitial}>{userInitial}</Text>
                 </View>
               </View>
 
-              {/* User Name */}
               <Text style={styles.userName}>{userName}</Text>
 
-              {/* Quick Actions */}
+              {/* Hiển thị số dư ví */}
+              {wallet && (
+                <View style={{ marginTop: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 16, color: "#555" }}>Số dư ví:</Text>
+                  <Text
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "#2E7D32",
+                    }}
+                  >
+                    {wallet.balance.toLocaleString("vi-VN")} đ
+                  </Text>
+                </View>
+              )}
+
+              {/* Các hành động nhanh */}
               <View style={styles.quickActionsContainer}>
                 <TouchableOpacity
                   style={styles.quickAction}
@@ -119,9 +152,8 @@ const AccountLoggedIn = ({
           </View>
         </View>
 
-        {/* Menu Content */}
+        {/* Nội dung menu */}
         <View style={styles.menuContent}>
-          {/* Activities Section */}
           <View style={styles.menuSection}>
             <Text style={styles.sectionTitle}>Hoạt động</Text>
             <TouchableOpacity
@@ -138,7 +170,6 @@ const AccountLoggedIn = ({
             </TouchableOpacity>
           </View>
 
-          {/* System Section */}
           <View style={styles.menuSection}>
             <Text style={styles.sectionTitle}>Hệ thống</Text>
 
@@ -198,6 +229,7 @@ const AccountLoggedIn = ({
           </View>
         </View>
       </ScrollView>
+
       <BottomNavigation />
     </SafeAreaView>
   );

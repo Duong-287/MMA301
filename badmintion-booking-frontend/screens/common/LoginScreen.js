@@ -89,7 +89,10 @@ export default function LoginScreen() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-        const user = result.user;
+        const user = {
+          ...result.user,
+          fullName: result.user.name,
+        };
         await AsyncStorage.setItem("token", result.token);
         setUser(user);
         if (user.role === "admin") {

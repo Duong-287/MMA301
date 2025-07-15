@@ -27,13 +27,16 @@ const depositMoney = async (req, res) => {
     return res.status(400).json({ message: "Invalid deposit amount" });
   }
   try {
-    const wallet = await Wallet.findOne({ userId: userId });
+    let wallet = await Wallet.findOne({ userId });
+
     if (!wallet) {
-      return res.status(400).json({ message: "Wallet not found" });
+      wallet = new Wallet({ userId, balance: 0 });
+      await wallet.save();
     }
+
     await wallet.deposit(amount);
     return res.status(200).json({
-      message: "deposit successful",
+      message: "Deposit successful",
       balance: wallet.balance,
     });
   } catch (err) {

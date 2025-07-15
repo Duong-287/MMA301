@@ -11,8 +11,13 @@ import {
   Alert,
   RefreshControl,
   TextInput,
+  Image,
 } from "react-native";
-import { getCourtsByOwner, updateCourtStatus } from "../../services/court";
+import {
+  deleteCourt,
+  getCourtsByOwner,
+  updateCourtStatus,
+} from "../../services/court";
 
 const ManageCourtsScreen = ({ navigation, route }) => {
   const { ownerId } = route?.params || {};
@@ -22,7 +27,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
+  const [selectedFilter, setSelectedFilter] = useState("all"); // all, active, waiting
 
   useEffect(() => {
     loadCourts();
@@ -143,65 +148,198 @@ const ManageCourtsScreen = ({ navigation, route }) => {
     return status === "active" ? "Hoạt động" : "Chờ duyệt";
   };
 
+  const getIconDisplay = (iconName) => {
+    const iconMap = {
+      activity: "🏸",
+      target: "🎯",
+      thermometer: "🌡️",
+      "volume-2": "🔊",
+      sun: "💡",
+      home: "🏠",
+      coffee: "☕",
+      car: "🚗",
+      wifi: "📶",
+      droplet: "💧",
+      star: "⭐",
+      heart: "❤️",
+      shield: "🛡️",
+    };
+    return iconMap[iconName] || "⭐";
+  };
+
   const renderCourtCard = (court) => (
     <View key={court._id} style={styles.courtCard}>
-      <View style={styles.courtCardHeader}>
-        <View style={styles.courtInfo}>
-          <Text style={styles.courtName}>{court.name}</Text>
-          <Text style={styles.courtAddress}>{court.address}</Text>
-          <View style={styles.courtMeta}>
-            <Text style={styles.courtMetaText}>
-              🕐 {court.startTime} - {court.endTime}
-            </Text>
-            <Text style={styles.courtMetaText}>
-              💰 {court.pricePerHour.toLocaleString()} VNĐ/giờ
-            </Text>
-          </View>
-        </View>
-        <View style={styles.courtActions}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(court.status) },
-            ]}
+      {/* Court Images */}
+      {court.images && court.images.length > 0 && (
+        <View style={styles.imagesContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.imagesList}
           >
-            <Text style={styles.statusText}>{getStatusText(court.status)}</Text>
+            {court.images.slice(0, 4).map((imageUrl, index) => (
+              <Image
+                key={index}
+                source={{ uri: `http://192.168.1.18:3000/uploads/${imageUrl}` }}
+                style={styles.courtImage}
+              />
+            ))}
+          </ScrollView>
+          {court.images.length > 4 && (
+            <View style={styles.moreImagesOverlay}>
+              <Text style={styles.moreImagesText}>
+                +{court.images.length - 4}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <View style={styles.courtCardContent}>
+        <View style={styles.courtCardHeader}>
+          <View style={styles.courtInfo}>
+            <Text style={styles.courtName}>{court.name}</Text>
+            <Text style={styles.courtAddress}>{court.address}</Text>
+
+            {/* Description */}
+            {court.description && (
+              <Text style={styles.courtDescription} numberOfLines={2}>
+                {court.description}
+              </Text>
+            )}
+
+            <View style={styles.courtMeta}>
+              <Text style={styles.courtMetaText}>
+                🕐 {court.startTime} - {court.endTime}
+              </Text>
+              <Text style={styles.courtMetaText}>
+                💰 {court.pricePerHour?.toLocaleString()} VNĐ/giờ
+              </Text>
+              {court.serviceFee > 0 && (
+                <Text style={styles.courtMetaText}>
+                  📋 Phí dịch vụ: {court.serviceFee?.toLocaleString()} VNĐ
+                </Text>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.courtActions}>
+            <View
+              style={[
+                styles.statusBadge,
+                { backgroundColor: getStatusColor(court.status) },
+              ]}
+            >
+              <Text style={styles.statusText}>
+                {getStatusText(court.status)}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.courtCardActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleViewSchedule(court)}
-        >
-          <Text style={styles.actionButtonText}>📅 Lịch trình</Text>
-        </TouchableOpacity>
+        {/* Facilities */}
+        {court.facilities && court.facilities.length > 0 && (
+          <View style={styles.facilitiesContainer}>
+            <Text style={styles.facilitiesTitle}>Tiện nghi:</Text>
+            <View style={styles.facilitiesList}>
+              {court.facilities.slice(0, 6).map((facility, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.facilityTag,
+                    !facility.available && styles.facilityTagUnavailable,
+                  ]}
+                >
+                  <Text style={styles.facilityTagIcon}>
+                    {getIconDisplay(facility.icon)}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.facilityTagText,
+                      !facility.available && styles.facilityTagTextUnavailable,
+                    ]}
+                  >
+                    {facility.name}
+                  </Text>
+                  {!facility.available && (
+                    <Text style={styles.unavailableIcon}>⚠️</Text>
+                  )}
+                </View>
+              ))}
+              {court.facilities.length > 6 && (
+                <View style={styles.facilityTag}>
+                  <Text style={styles.facilityTagText}>
+                    +{court.facilities.length - 6}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleEditCourt(court)}
-        >
-          <Text style={styles.actionButtonText}>✏️ Chỉnh sửa</Text>
-        </TouchableOpacity>
+        {/* Rules Preview */}
+        {court.rules && court.rules.length > 0 && (
+          <View style={styles.rulesContainer}>
+            <Text style={styles.rulesTitle}>📋 Quy định:</Text>
+            <Text style={styles.ruleText} numberOfLines={1}>
+              • {court.rules[0]}
+            </Text>
+            {court.rules.length > 1 && (
+              <Text style={styles.moreRules}>
+                +{court.rules.length - 1} quy định khác
+              </Text>
+            )}
+          </View>
+        )}
 
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => handleToggleStatus(court)}
-        >
-          <Text style={styles.actionButtonText}>
-            {court.status === "active" ? "⏸️ Tạm dừng" : "▶️ Kích hoạt"}
-          </Text>
-        </TouchableOpacity>
+        {/* Policies Preview */}
+        {court.policies && court.policies.length > 0 && (
+          <View style={styles.policiesContainer}>
+            <Text style={styles.policiesTitle}>🎁 Ưu đãi:</Text>
+            <Text style={styles.policyText} numberOfLines={1}>
+              {court.policies[0]}
+            </Text>
+            {court.policies.length > 1 && (
+              <Text style={styles.morePolicies}>
+                +{court.policies.length - 1} ưu đãi khác
+              </Text>
+            )}
+          </View>
+        )}
 
-        <TouchableOpacity
-          style={[styles.actionButton, styles.deleteButton]}
-          onPress={() => handleDeleteCourt(court)}
-        >
-          <Text style={[styles.actionButtonText, styles.deleteButtonText]}>
-            🗑️ Xóa
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.courtCardActions}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleViewSchedule(court)}
+          >
+            <Text style={styles.actionButtonText}>📅 Lịch trình</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleEditCourt(court)}
+          >
+            <Text style={styles.actionButtonText}>✏️ Chỉnh sửa</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => handleToggleStatus(court)}
+          >
+            <Text style={styles.actionButtonText}>
+              {court.status === "active" ? "⏸️ Tạm dừng" : "▶️ Kích hoạt"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={() => handleDeleteCourt(court)}
+          >
+            <Text style={[styles.actionButtonText, styles.deleteButtonText]}>
+              🗑️ Xóa
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -507,13 +645,42 @@ const styles = StyleSheet.create({
   courtCard: {
     backgroundColor: "white",
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
+    overflow: "hidden",
+  },
+  imagesContainer: {
+    position: "relative",
+  },
+  imagesList: {
+    height: 120,
+  },
+  courtImage: {
+    width: 120,
+    height: 120,
+    marginRight: 8,
+  },
+  moreImagesOverlay: {
+    position: "absolute",
+    right: 8,
+    top: 0,
+    width: 120,
+    height: 120,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  moreImagesText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  courtCardContent: {
+    padding: 16,
   },
   courtCardHeader: {
     flexDirection: "row",
@@ -534,8 +701,15 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 8,
   },
+  courtDescription: {
+    fontSize: 13,
+    color: "#666",
+    marginBottom: 8,
+    lineHeight: 18,
+  },
   courtMeta: {
     gap: 4,
+    marginBottom: 8,
   },
   courtMetaText: {
     fontSize: 12,
@@ -553,6 +727,87 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "white",
     fontWeight: "500",
+  },
+  facilitiesContainer: {
+    marginBottom: 12,
+  },
+  facilitiesTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 6,
+  },
+  facilitiesList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+  },
+  facilityTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F5E8",
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  facilityTagUnavailable: {
+    backgroundColor: "#FFEBEE",
+  },
+  facilityTagIcon: {
+    fontSize: 10,
+    marginRight: 3,
+  },
+  facilityTagText: {
+    fontSize: 10,
+    color: "#2E7D32",
+    fontWeight: "500",
+  },
+  facilityTagTextUnavailable: {
+    color: "#F44336",
+  },
+  unavailableIcon: {
+    fontSize: 8,
+    marginLeft: 2,
+  },
+  rulesContainer: {
+    marginBottom: 8,
+  },
+  rulesTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  ruleText: {
+    fontSize: 12,
+    color: "#666",
+    lineHeight: 16,
+  },
+  moreRules: {
+    fontSize: 10,
+    color: "#999",
+    marginTop: 2,
+  },
+  policiesContainer: {
+    marginBottom: 12,
+  },
+  policiesTitle: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  policyText: {
+    fontSize: 12,
+    color: "#FF9800",
+    fontWeight: "500",
+    lineHeight: 16,
+  },
+  morePolicies: {
+    fontSize: 10,
+    color: "#999",
+    marginTop: 2,
   },
   courtCardActions: {
     flexDirection: "row",

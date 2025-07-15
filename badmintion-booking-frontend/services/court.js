@@ -30,22 +30,55 @@ export const getCourtById = async (courtId) => {
   }
 };
 
-export const updateCourt = async (courtId, updatedData) => {
+export const updateCourt = async (courtId, courtData) => {
   try {
     const token = await AsyncStorage.getItem("token");
+    const formData = new FormData();
+
+    // Append các trường khác (trừ images)
+    Object.entries(courtData).forEach(([key, value]) => {
+      if (key !== "images" && value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+
+    // 👉 Lọc ảnh cũ (đã là URL) và thêm vào "images"
+    const oldImages = courtData.images.filter(
+      (uri) => !uri.startsWith("file://")
+    );
+    formData.append("images", JSON.stringify(oldImages));
+
+    // 👉 Lọc ảnh mới (local) và thêm vào "files"
+    courtData.images
+      .filter((uri) => uri.startsWith("file://"))
+      .forEach((uri) => {
+        const filename = uri.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
+
+        formData.append("files", {
+          uri,
+          name: filename,
+          type,
+        });
+      });
+
     const response = await axios.put(
       `${API_URL}/owner/grounds/${courtId}`,
-      updatedData,
+      formData,
       {
         headers: {
+          "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
+        timeout: 30000,
       }
     );
+
     return { success: true, data: response.data };
   } catch (error) {
-    console.log("Lỗi chỉnh sửa trạng thái sân:", error);
-    return { success: false, message: "Không thể cập nhật trạng thái sân." };
+    console.log("Lỗi chỉnh sửa sân:", error.response?.data || error.message);
+    return { success: false, message: "Không thể cập nhật sân." };
   }
 };
 
@@ -53,7 +86,7 @@ export const updateCourtStatus = async (courtId, newStatus) => {
   try {
     const token = await AsyncStorage.getItem("token");
     const response = await axios.put(
-      `${API_URL}/owner/grounds/${courtId}`,
+      `${API_URL}/owner/grounds/${courtId}/status`,
       { status: newStatus },
       {
         headers: {
@@ -71,14 +104,45 @@ export const updateCourtStatus = async (courtId, newStatus) => {
 export const createCourt = async (courtData) => {
   try {
     const token = await AsyncStorage.getItem("token");
-    const response = await axios.post(`${API_URL}/owner/grounds`, courtData, {
+
+    const formData = new FormData();
+
+    Object.entries(courtData).forEach(([key, value]) => {
+      if (key !== "images" && value !== undefined && value !== null) {
+        formData.append(key, value.toString());
+      }
+    });
+
+    const oldImages = courtData.images.filter(
+      (uri) => !uri.startsWith("file://")
+    );
+    formData.append("images", JSON.stringify(oldImages));
+
+    courtData.images
+      .filter((uri) => uri.startsWith("file://"))
+      .forEach((uri) => {
+        const filename = uri.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : "image/jpeg";
+
+        formData.append("files", {
+          uri,
+          name: filename,
+          type,
+        });
+      });
+
+    const response = await axios.post(`${API_URL}/owner/grounds`, formData, {
       headers: {
+        "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
       },
+      timeout: 30000,
     });
+
     return { success: true, data: response.data };
   } catch (error) {
-    console.log("Lỗi tạo sân:", error);
+    console.log("Lỗi tạo sân:", error.response?.data || error.message);
     return { success: false, message: "Không thể tạo sân." };
   }
 };
