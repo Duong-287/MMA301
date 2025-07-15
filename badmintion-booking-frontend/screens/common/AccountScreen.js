@@ -47,7 +47,7 @@ const AccountScreen = () => {
   };
 
   const handleProfile = () => {
-    console.log("Show profile");
+    navigation.navigate("Profile");
   };
 
   const handlePassword = () => {
@@ -69,7 +69,7 @@ const AccountScreen = () => {
   if (user) {
     return (
       <AccountLoggedIn
-        userName={user.name}
+        userName={user?.fullName}
         userInitial={user.initial}
         onNotificationPress={handleNotification}
         onCalendarPress={handleCalendar}

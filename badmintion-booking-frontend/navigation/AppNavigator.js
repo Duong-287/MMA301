@@ -12,6 +12,8 @@ import EditCourtScreen from "../screens/owner/EditCourtScreen";
 import ManageCourtsScreen from "../screens/owner/ManageCourtsScreen";
 import OwnerWalletScreen from "../screens/owner/OwnerWalletScreen";
 import CourtScheduleScreen from "../screens/owner/CourtScheduleScreen";
+import CourtDetailScreen from "../screens/common/CourtDetailScreen";
+import CourtMapScreen from "../screens/common/CourtMapScreen";
 
 const Stack = createStackNavigator();
 
@@ -34,7 +36,9 @@ const AppNavigator = () => (
     <Stack.Screen name="ManageCourts" component={ManageCourtsScreen} />
     <Stack.Screen name="OwnerWallet" component={OwnerWalletScreen} />
     <Stack.Screen name="CourtSchedule" component={CourtScheduleScreen} />
+    <Stack.Screen name="CourtDetail" component={CourtDetailScreen} />
     <Stack.Screen name="VerifyOtpScreen" component={VerifyOtpScreen} />
+    <Stack.Screen name="CourtMapScreen" component={CourtMapScreen} />
   </Stack.Navigator>
 );
 

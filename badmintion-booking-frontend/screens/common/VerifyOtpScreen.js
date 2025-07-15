@@ -141,7 +141,7 @@ const VerifyOtpScreen = ({ route, navigation }) => {
         <View style={styles.logo}>
           <Text style={styles.logoText}>🏸</Text>
         </View>
-        <Text style={styles.appName}>BadmintonPro</Text>
+        <Text style={styles.appName}>Smäsh Badminton</Text>
         <Text style={styles.appSlogan}>Xác minh tài khoản</Text>
       </View>
     </View>

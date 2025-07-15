@@ -17,7 +17,6 @@ import Feather from "react-native-vector-icons/Feather";
 import BottomNavigation from "../../components/BottomNavigation";
 import { login, register, forgotPassword } from "../../services/auth";
 import { useNavigation } from "@react-navigation/native";
-const { width, height } = Dimensions.get("window");
 import { useAuth } from "../../context/AuthContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -90,7 +89,10 @@ export default function LoginScreen() {
     try {
       if (isLogin) {
         const result = await login(formData.email, formData.password);
-        const user = result.user;
+        const user = {
+          ...result.user,
+          fullName: result.user.name,
+        };
         await AsyncStorage.setItem("token", result.token);
         setUser(user);
         if (user.role === "admin") {
@@ -190,7 +192,7 @@ export default function LoginScreen() {
         <View style={styles.logo}>
           <Text style={styles.logoText}>🏸</Text>
         </View>
-        <Text style={styles.appName}>BadmintonPro</Text>
+        <Text style={styles.appName}>Smäsh Badminton</Text>
         <Text style={styles.appSlogan}>Đặt sân cầu lông dễ dàng</Text>
       </View>
     </View>

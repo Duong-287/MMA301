@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-const API_URL = "http://192.168.1.18:3000";
+import { API_URL } from "../utils/config";
 
 export const getOwnerWallet = async (ownerId) => {
   try {
@@ -14,7 +14,9 @@ export const getOwnerWallet = async (ownerId) => {
 
     return { success: true, data: response.data.wallet };
   } catch (error) {
-    console.log("Lỗi lấy ví:", error);
-    return { success: false, message: "Không thể lấy ví." };
+    if (__DEV__) {
+      console.log("Lỗi lấy ví:", error);
+      return { success: false, message: "Không thể lấy ví." };
+    }
   }
 };

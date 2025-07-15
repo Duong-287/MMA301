@@ -1,10 +1,10 @@
 import axios from "axios";
 
-const BASE_URL = "http://192.168.1.18:3000";
+import { API_URL } from "../utils/config";
 
 // Tạo Axios instance
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   timeout: 30000,
   headers: {
     "Content-Type": "multipart/form-data",

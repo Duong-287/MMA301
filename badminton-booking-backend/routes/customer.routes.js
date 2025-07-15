@@ -1,5 +1,5 @@
 const express = require("express");
-const { getInformation } = require("../controllers/UserController");
+const { getInformation, updateUserProfile } = require("../controllers/UserController");
 const {
   getWallet,
   depositMoney,
@@ -16,6 +16,8 @@ const router = express.Router();
 
 // Xem thông tin cá nhân
 router.get("/profile", getInformation);
+//Update thông tin cá nhân
+router.put("/profile", updateUserProfile);
 // Xem số dư ví
 router.get("/wallet", getWallet);
 // Nạp tiền vào ví

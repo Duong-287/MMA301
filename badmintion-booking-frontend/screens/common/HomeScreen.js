@@ -12,25 +12,54 @@ import {
   StatusBar,
   SafeAreaView,
   Dimensions,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import BottomNavigation from "../../components/BottomNavigation";
 import { useAuth } from "../../context/AuthContext";
-
-const { width } = Dimensions.get("window");
+import { getAllGrounds } from "../../services/grounds";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState("");
+  const [grounds, setGrounds] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    fetchGrounds();
+  }, []);
+
+  const fetchGrounds = async () => {
+    try {
+      const data = await getAllGrounds();
+      setGrounds(data);
+    } catch (err) {
+      console.log(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
     moment.locale("vi");
     const now = moment();
     const formatted = now.format("dddd, DD/MM/YYYY");
     setCurrentDate(formatted);
   }, []);
-
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <Text style={{ color: "#fff", fontSize: 18 }}>
+            Đang tải dữ liệu...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -82,7 +111,7 @@ const HomeScreen = () => {
               <View style={styles.logoGlow} />
             </View>
             <View>
-              <Text style={styles.appName}>ALOBO</Text>
+              <Text style={styles.appName}>Smäsh Badminton</Text>
               <Text style={styles.dateText}>{currentDate}</Text>
             </View>
           </View>
@@ -92,7 +121,7 @@ const HomeScreen = () => {
               <Text
                 style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
               >
-                Xin chào, {user.name}
+                Xin chào, {user?.fullName}
               </Text>
             </View>
           ) : (
@@ -119,7 +148,7 @@ const HomeScreen = () => {
         style={styles.mainContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Enhanced Search section */}
+        {/* Search section */}
         <View style={styles.searchSection}>
           <View style={styles.searchInputContainer}>
             <View style={styles.searchIconContainer}>
@@ -137,209 +166,77 @@ const HomeScreen = () => {
             <View style={styles.heartGlow} />
           </TouchableOpacity>
         </View>
-
-        {/* Enhanced Filter chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.filtersContainer}
-        >
+        {grounds.map((ground, index) => (
           <TouchableOpacity
-            style={[styles.filterChip, styles.filterChipActive]}
+            key={index}
+            style={styles.venueCard}
+            onPress={() => navigation.navigate("CourtDetail", { ground })}
           >
-            <Text style={styles.filterTextActive}>🚗 Xe về gần tôi</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterText}>🏓 Pickleball gần tôi</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterChip}>
-            <Text style={styles.filterText}>🏸 Cầu lông gần tôi</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        {/* Enhanced Sports categories */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.sportsContainer}
-        >
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#2196F3" }]}>
-              <Text style={styles.sportEmoji}>🏓</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Pickleball</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#4CAF50" }]}>
-              <Text style={styles.sportEmoji}>🏸</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Cầu lông</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#FF5722" }]}>
-              <Text style={styles.sportEmoji}>⚽</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Bóng đá</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#FF9800" }]}>
-              <Text style={styles.sportEmoji}>🎾</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Tennis</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#9C27B0" }]}>
-              <Text style={styles.sportEmoji}>🏐</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>B.Chuyền</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sportItem}>
-            <View style={[styles.sportIcon, { backgroundColor: "#E91E63" }]}>
-              <Text style={styles.sportEmoji}>🏐</Text>
-              <View style={styles.sportIconGlow} />
-            </View>
-            <Text style={styles.sportName}>Bóng chuyền</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        {/* Enhanced Section title */}
-        <View style={styles.sectionTitleContainer}>
-          <View style={styles.sectionTitleWrapper}>
-            <Text style={styles.sectionIcon}>🌟</Text>
-            <Text style={styles.sectionTitle}>Khám phá thêm</Text>
-          </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Text style={styles.filterIcon}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Enhanced Venue Cards */}
-        <TouchableOpacity style={styles.venueCard}>
-          <View style={styles.venueCardGlow} />
-          <View style={styles.venueCardHeader}>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.star}>⭐</Text>
-              <Text style={styles.rating}>5.0</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              <View style={[styles.tag, { backgroundColor: "#4CAF50" }]}>
-                <Text style={styles.tagText}>Đơn ngày</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#E91E63" }]}>
-                <Text style={styles.tagText}>Sự kiện</Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>🤍</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>📤</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.venueCardContent}>
-            <View style={styles.venueInfo}>
-              <View style={styles.venueLogoContainer}>
-                <View style={styles.venueLogo}>
-                  <Text style={styles.venueLogoText}>🏸</Text>
-                  <View style={styles.venueLogoGlow} />
-                </View>
-              </View>
-              <View style={styles.venueDetails}>
-                <Text style={styles.venueName}>
-                  CLB Cầu Lông TPT Sport - Lăng đại học
-                </Text>
-                <Text style={styles.venueAddress}>
-                  📍 Thôn D, Tân Thới Tung, Đông Hòa, Dĩ An, Bình Dương
-                </Text>
-                <View style={styles.venueMetaContainer}>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>🕐</Text>
-                    <Text style={styles.venueMeta}>06:00 - 22:00</Text>
+            <View style={styles.venueCardHeader}>
+              <View style={styles.tagsContainer}>
+                {(ground.tags || []).map((tag, tagIndex) => (
+                  <View
+                    key={tagIndex}
+                    style={[
+                      styles.tag,
+                      {
+                        backgroundColor:
+                          tag === "Đơn ngày"
+                            ? "#4CAF50"
+                            : tag === "Sự kiện"
+                            ? "#E91E63"
+                            : "#607D8B",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.tagText}>{tag}</Text>
                   </View>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>📞</Text>
-                    <Text style={styles.venueMeta}>0974857048</Text>
+                ))}
+              </View>
+            </View>
+
+            <View style={styles.venueCardContent}>
+              <View style={styles.venueInfo}>
+                <View style={styles.venueLogoContainer}>
+                  <View style={styles.venueLogo}>
+                    <Text style={styles.venueLogoText}>🏸</Text>
+                    <View style={styles.venueLogoGlow} />
+                  </View>
+                </View>
+
+                <View style={styles.venueDetails}>
+                  <Text style={styles.venueName}>{ground.name}</Text>
+                  <Text style={styles.venueAddress}>📍 {ground.address}</Text>
+
+                  <View style={styles.venueMetaContainer}>
+                    <View style={styles.venueMetaItem}>
+                      <Text style={styles.venueMetaIcon}>🕐</Text>
+                      <Text style={styles.venueMeta}>
+                        {ground.startTime || "?"} - {ground.endTime || "?"}
+                      </Text>
+                    </View>
+                    <View style={styles.venueMetaItem}>
+                      <Text style={styles.venueMetaIcon}>📞</Text>
+                      <Text style={styles.venueMeta}>
+                        {ground.ownerId?.phone || "Đang cập nhật"}
+                      </Text>
+                    </View>
                   </View>
                 </View>
               </View>
             </View>
-          </View>
 
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
-            <View style={styles.bookButtonGlow} />
+            <TouchableOpacity
+              style={styles.bookButton}
+              onPress={() =>
+                navigation.navigate("Booking", { courtId: ground._id })
+              }
+            >
+              <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
+              <View style={styles.bookButtonGlow} />
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-
-        {/* Enhanced Venue Card 2 */}
-        <TouchableOpacity style={styles.venueCard}>
-          <View style={styles.venueCardGlow} />
-          <View style={styles.venueCardHeader}>
-            <View style={styles.ratingContainer}>
-              <Text style={styles.star}>⭐</Text>
-              <Text style={styles.rating}>4.5</Text>
-            </View>
-            <View style={styles.tagsContainer}>
-              <View style={[styles.tag, { backgroundColor: "#4CAF50" }]}>
-                <Text style={styles.tagText}>Đơn ngày</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#2196F3" }]}>
-                <Text style={styles.tagText}>Đơn tháng</Text>
-              </View>
-              <View style={[styles.tag, { backgroundColor: "#E91E63" }]}>
-                <Text style={styles.tagText}>Sự kiện</Text>
-              </View>
-            </View>
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>🤍</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionIcon}>📤</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.venueCardContent}>
-            <View style={styles.venueInfo}>
-              <View style={styles.venueLogoContainer}>
-                <View
-                  style={[styles.venueLogo, { backgroundColor: "#FF9800" }]}
-                >
-                  <Text style={styles.venueLogoText}>🏟️</Text>
-                  <View style={styles.venueLogoGlow} />
-                </View>
-              </View>
-              <View style={styles.venueDetails}>
-                <Text style={styles.venueName}>Sân Hoa Thiên Lý</Text>
-                <Text style={styles.venueAddress}>📍 Số 4 Nguyễn Văn Cừ</Text>
-                <View style={styles.venueMetaContainer}>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>🕐</Text>
-                    <Text style={styles.venueMeta}>05:00 - 24:00</Text>
-                  </View>
-                  <View style={styles.venueMetaItem}>
-                    <Text style={styles.venueMetaIcon}>📞</Text>
-                    <Text style={styles.venueMeta}>0913223333</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
-            <View style={styles.bookButtonGlow} />
-          </TouchableOpacity>
-        </TouchableOpacity>
+        ))}
 
         {/* Add some bottom spacing */}
         <View style={styles.bottomSpacing} />

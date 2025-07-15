@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,21 +10,20 @@ import {
   Dimensions,
   StatusBar,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// Mock icons - trong thực tế bạn sẽ sử dụng react-native-vector-icons
-const Icon = ({ name, size = 20, color = "#666" }) => (
-  <View style={[styles.iconPlaceholder, { width: size, height: size }]}>
-    <Text style={{ color, fontSize: size * 0.6 }}>
-      {name.charAt(0).toUpperCase()}
-    </Text>
-  </View>
-);
-
+import BottomNavigation from "../../components/BottomNavigation";
+import Feather from "react-native-vector-icons/Feather";
+import { getUserProfile, updateUserProfile } from "../../services/customer";
+import { useAuth } from "../../context/AuthContext";
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState("info");
   const [isEditing, setIsEditing] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -33,24 +32,8 @@ export default function ProfileScreen() {
     promotion: false,
   });
 
-  const [profile, setProfile] = useState({
-    name: "Nguyễn Văn An",
-    email: "nguyenvanan@email.com",
-    phone: "0123 456 789",
-    location: "Hà Nội",
-    level: "Trung bình",
-    position: "Đánh đôi",
-    experience: "3 năm",
-    bio: "Yêu thích cầu lông, thường chơi vào cuối tuần. Tìm kiếm đối thủ cùng trình độ để cùng luyện tập.",
-  });
-
-  const stats = [
-    { label: "Trận đã chơi", value: "127", icon: "T", color: "#F59E0B" },
-    { label: "Giờ chơi", value: "89h", icon: "C", color: "#3B82F6" },
-    { label: "Sân yêu thích", value: "A1", icon: "S", color: "#10B981" },
-    { label: "Tỷ lệ thắng", value: "68%", icon: "%", color: "#8B5CF6" },
-  ];
-
+  const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const recentBookings = [
     {
       date: "15/12/2024",
@@ -82,18 +65,29 @@ export default function ProfileScreen() {
   ];
 
   const tabs = [
-    { id: "info", label: "Thông tin", icon: "U" },
-    { id: "history", label: "Lịch sử", icon: "H" },
-    { id: "achievements", label: "Thành tích", icon: "A" },
-    { id: "settings", label: "Cài đặt", icon: "S" },
+    { id: "info", label: "Thông tin", icon: "user" },
+    { id: "history", label: "Lịch sử", icon: "clock" },
+    { id: "achievements", label: "Thành tích", icon: "award" },
+    { id: "settings", label: "Cài đặt", icon: "settings" },
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert("Thành công", "Thông tin đã được cập nhật!");
+  const handleSave = async () => {
+    try {
+      const result = await updateUserProfile(profile);
+
+      if (result.success) {
+        setUser(profile);
+        Alert.alert("✅ Thành công", "Thông tin đã được cập nhật!");
+        setIsEditing(false);
+      } else {
+        Alert.alert("❌ Lỗi", result.message || "Không thể cập nhật.");
+      }
+    } catch (error) {
+      Alert.alert("❌ Lỗi", "Đã xảy ra lỗi khi cập nhật.");
+    }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -102,70 +96,58 @@ export default function ProfileScreen() {
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {profile.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+            {profile.fullName
+              ? profile.fullName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+              : ""}
           </Text>
         </View>
         <TouchableOpacity style={styles.cameraButton}>
-          <Icon name="camera" size={16} color="#666" />
+          <Feather name="camera" size={16} color="#666" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.profileInfo}>
         <View style={styles.nameContainer}>
-          <Text style={styles.name}>{profile.name}</Text>
+          <Text style={styles.name}>{profile.fullName || "Người dùng"}</Text>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>{profile.level}</Text>
+            <Text style={styles.levelText}>{profile.level || "Chưa rõ"}</Text>
           </View>
         </View>
 
         <View style={styles.contactInfo}>
           <View style={styles.contactItem}>
-            <Icon name="mail" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.email}</Text>
+            <Feather name="mail" size={14} color="#666" />
+            <Text style={styles.contactText}>
+              {profile.email || "Chưa có email"}
+            </Text>
           </View>
           <View style={styles.contactItem}>
-            <Icon name="phone" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.phone}</Text>
+            <Feather name="phone" size={14} color="#666" />
+            <Text style={styles.contactText}>
+              {profile.phone || "Chưa có SĐT"}
+            </Text>
           </View>
           <View style={styles.contactItem}>
-            <Icon name="location" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.location}</Text>
+            <Feather name="map-pin" size={14} color="#666" />
+            <Text style={styles.contactText}>
+              {profile.address || "Chưa có địa điểm"}
+            </Text>
           </View>
         </View>
-
-        <Text style={styles.bio}>{profile.bio}</Text>
       </View>
 
       <TouchableOpacity
         style={styles.editButton}
         onPress={isEditing ? handleSave : () => setIsEditing(true)}
       >
-        <Icon name={isEditing ? "save" : "edit"} size={16} color="#fff" />
+        <Feather name={isEditing ? "save" : "edit"} size={16} color="#fff" />
         <Text style={styles.editButtonText}>
           {isEditing ? "Lưu" : "Chỉnh sửa"}
         </Text>
       </TouchableOpacity>
-    </View>
-  );
-
-  const renderStats = () => (
-    <View style={styles.statsContainer}>
-      {stats.map((stat, index) => (
-        <View key={index} style={styles.statCard}>
-          <View
-            style={[styles.statIcon, { backgroundColor: stat.color + "20" }]}
-          >
-            <Text style={[styles.statIconText, { color: stat.color }]}>
-              {stat.icon}
-            </Text>
-          </View>
-          <Text style={styles.statValue}>{stat.value}</Text>
-          <Text style={styles.statLabel}>{stat.label}</Text>
-        </View>
-      ))}
     </View>
   );
 
@@ -177,7 +159,7 @@ export default function ProfileScreen() {
           style={[styles.tab, activeTab === tab.id && styles.activeTab]}
           onPress={() => setActiveTab(tab.id)}
         >
-          <Icon
+          <Feather
             name={tab.icon}
             size={16}
             color={activeTab === tab.id ? "#fff" : "#666"}
@@ -199,7 +181,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="user" size={20} color="#10B981" />
+          <Feather name="user" size={20} color="#10B981" />
           <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
         </View>
 
@@ -207,8 +189,8 @@ export default function ProfileScreen() {
           <Text style={styles.inputLabel}>Họ và tên</Text>
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
-            value={profile.name}
-            onChangeText={(value) => handleInputChange("name", value)}
+            value={profile.fullName}
+            onChangeText={(value) => handleInputChange("fullName", value)}
             editable={isEditing}
           />
         </View>
@@ -239,16 +221,17 @@ export default function ProfileScreen() {
           <Text style={styles.inputLabel}>Địa điểm</Text>
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
-            value={profile.location}
-            onChangeText={(value) => handleInputChange("location", value)}
+            value={profile.address}
+            onChangeText={(value) => handleInputChange("address", value)}
             editable={isEditing}
           />
         </View>
       </View>
 
-      <View style={styles.section}>
+      {/* Thông tin cầu lông */}
+      {/* <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="target" size={20} color="#3B82F6" />
+          <Feather name="target" size={20} color="#3B82F6" />
           <Text style={styles.sectionTitle}>Thông tin cầu lông</Text>
         </View>
 
@@ -291,14 +274,14 @@ export default function ProfileScreen() {
             numberOfLines={3}
           />
         </View>
-      </View>
+      </View> */}
     </View>
   );
 
   const renderHistory = () => (
     <View style={styles.tabContent}>
       <View style={styles.sectionHeader}>
-        <Icon name="calendar" size={20} color="#10B981" />
+        <Feather name="calendar" size={20} color="#10B981" />
         <Text style={styles.sectionTitle}>Lịch sử đặt sân</Text>
       </View>
 
@@ -306,7 +289,7 @@ export default function ProfileScreen() {
         <View key={index} style={styles.bookingCard}>
           <View style={styles.bookingInfo}>
             <View style={styles.bookingIcon}>
-              <Icon name="calendar" size={16} color="#10B981" />
+              <Feather name="calendar" size={16} color="#10B981" />
             </View>
             <View style={styles.bookingDetails}>
               <Text style={styles.bookingCourt}>{booking.court}</Text>
@@ -334,7 +317,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="trophy" size={20} color="#F59E0B" />
+          <Feather name="trophy" size={20} color="#F59E0B" />
           <Text style={styles.sectionTitle}>Huy hiệu</Text>
         </View>
 
@@ -392,7 +375,7 @@ export default function ProfileScreen() {
     <View style={styles.tabContent}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="bell" size={20} color="#3B82F6" />
+          <Feather name="bell" size={20} color="#3B82F6" />
           <Text style={styles.sectionTitle}>Thông báo</Text>
         </View>
 
@@ -450,7 +433,7 @@ export default function ProfileScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Icon name="shield" size={20} color="#10B981" />
+          <Feather name="shield" size={20} color="#10B981" />
           <Text style={styles.sectionTitle}>Bảo mật</Text>
         </View>
 
@@ -492,18 +475,48 @@ export default function ProfileScreen() {
     }
   };
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const result = await getUserProfile();
+      if (result.success) {
+        setProfile(result.data);
+      } else {
+        Alert.alert("Lỗi", result.message);
+      }
+      setIsLoading(false);
+    };
+    fetchProfile();
+  }, []);
+  if (isLoading || !profile) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 50 }}>
+          Đang tải thông tin...
+        </Text>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {renderHeader()}
-        {renderStats()}
-        {renderTabs()}
-        {renderTabContent()}
-      </ScrollView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
+            {renderHeader()}
+            {renderTabs()}
+            {renderTabContent()}
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+      <BottomNavigation />
     </SafeAreaView>
   );
 }

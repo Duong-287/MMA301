@@ -6,7 +6,7 @@ const getBookingHistory = async (req, res) => {
   const userId = req.user.id;
   try {
     const bookingHistory = await Booking.find({ customerId: userId });
-    return res.status(200).message({ Booking: bookingHistory });
+    return res.status(200).json({ Booking: bookingHistory });
   } catch (err) {
     console.log("Error at get booking history: " + err);
     return res.status(500).json("Internal system error");

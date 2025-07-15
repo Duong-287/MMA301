@@ -1,12 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Base URL - thay đổi theo môi trường của bạn
-const BASE_URL = "http://localhost:3000/owner"; // hoặc URL backend của bạn
+import { API_URL } from "../utils/config"; 
 
 // Tạo axios instance với config chung
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_URL,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",

@@ -7,14 +7,14 @@ const walletSchema = new Schema({
 }, { timestamps: true });
 
 walletSchema.methods.deposit = function(amount) {
+  if (amount <= 0) throw new Error('Amount must be greater than zero.');
   this.balance += amount;
   return this.save();
 };
 
 walletSchema.methods.withdraw = function(amount) {
-  if (this.balance < amount) {
-    throw new Error('Insufficient balance.');
-  }
+  if (amount <= 0) throw new Error('Amount must be greater than zero.');
+  if (this.balance < amount) throw new Error('Insufficient balance.');
   this.balance -= amount;
   return this.save();
 };

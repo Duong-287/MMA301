@@ -6,7 +6,7 @@ const getAllGrounds = async (req, res) => {
   try {
     const courtList = await Court.find()
       .sort({ createdAt: -1, updatedAt: -1 })
-      .populate("ownerId", "_id username email fullName phone address");
+      .populate("ownerId", "_id email fullName phone address");
     console.log("Fetching all grounds:", courtList);
     return res.status(200).json(courtList);
   } catch (error) {
@@ -20,7 +20,7 @@ const getGroundById = async (req, res) => {
     const { id } = req.params;
     const court = await Court.findById(id).populate(
       "ownerId",
-      "_id username fullName email phone address"
+      "_id fullName email phone address"
     );
     return res.status(200).json({ court });
   } catch (err) {
@@ -209,6 +209,20 @@ const deleteGround = async (req, res) => {
   }
 };
 
+const getActiveGrounds = async (req, res) => {
+  try {
+    const activeCourts = await Court.find({ status: "active" }).populate(
+      "ownerId",
+      "_id username email fullName phone address"
+    );
+
+    return res.status(200).json(activeCourts);
+  } catch (error) {
+    console.error("Error fetching active grounds:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   getAllGrounds,
   getGroundById,
@@ -216,4 +230,5 @@ module.exports = {
   updateGround,
   deleteGround,
   updateGroundStatus,
+  getActiveGrounds,
 };
