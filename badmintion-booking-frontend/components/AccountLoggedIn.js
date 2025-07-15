@@ -36,58 +36,6 @@ const AccountLoggedIn = ({
       >
         {/* Header with colorful background */}
         <View style={styles.headerBackground}>
-          {/* Background pattern simulation */}
-          <View style={styles.backgroundPattern}>
-            <View
-              style={[
-                styles.colorBlock,
-                {
-                  backgroundColor: "#FF6B35",
-                  top: 20,
-                  left: 30,
-                  width: 60,
-                  height: 40,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.colorBlock,
-                {
-                  backgroundColor: "#4CAF50",
-                  top: 60,
-                  right: 40,
-                  width: 50,
-                  height: 50,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.colorBlock,
-                {
-                  backgroundColor: "#2196F3",
-                  top: 100,
-                  left: 60,
-                  width: 40,
-                  height: 60,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.colorBlock,
-                {
-                  backgroundColor: "#FFC107",
-                  top: 40,
-                  right: 80,
-                  width: 45,
-                  height: 35,
-                },
-              ]}
-            />
-          </View>
-
           <View style={styles.headerOverlay}>
             <View style={styles.headerContent}>
               {/* Action Buttons */}

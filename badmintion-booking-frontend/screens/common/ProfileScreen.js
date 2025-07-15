@@ -10,15 +10,20 @@ import {
   Dimensions,
   StatusBar,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavigation from "../../components/BottomNavigation";
 import Feather from "react-native-vector-icons/Feather";
 import { getUserProfile, updateUserProfile } from "../../services/customer";
-
+import { useAuth } from "../../context/AuthContext";
 const { width } = Dimensions.get("window");
 
 export default function ProfileScreen() {
+  const { user, setUser } = useAuth();
   const [activeTab, setActiveTab] = useState("info");
   const [isEditing, setIsEditing] = useState(false);
   const [notifications, setNotifications] = useState({
@@ -68,9 +73,10 @@ export default function ProfileScreen() {
 
   const handleSave = async () => {
     try {
-      const result = await updateUserProfile(profile); // Gửi thông tin mới
+      const result = await updateUserProfile(profile);
 
       if (result.success) {
+        setUser(profile);
         Alert.alert("✅ Thành công", "Thông tin đã được cập nhật!");
         setIsEditing(false);
       } else {
@@ -216,7 +222,7 @@ export default function ProfileScreen() {
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
             value={profile.address}
-            onChangeText={(value) => handleInputChange("location", value)}
+            onChangeText={(value) => handleInputChange("address", value)}
             editable={isEditing}
           />
         </View>
@@ -493,14 +499,23 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {renderHeader()}
-        {renderTabs()}
-        {renderTabContent()}
-      </ScrollView>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
+            {renderHeader()}
+            {renderTabs()}
+            {renderTabContent()}
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
       <BottomNavigation />
     </SafeAreaView>
   );

@@ -121,7 +121,7 @@ const HomeScreen = () => {
               <Text
                 style={{ color: "white", fontSize: 18, fontWeight: "bold" }}
               >
-                Xin chào, {user.name}
+                Xin chào, {user?.fullName}
               </Text>
             </View>
           ) : (
