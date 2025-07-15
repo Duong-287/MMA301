@@ -48,7 +48,31 @@ const createGround = async (req, res) => {
     policies,
     images,
     ownerId,
+    status,
+    description,
+    facilities,
+    rules,
+    policies,
+    images,
+    ownerId,
   } = req.body;
+
+  try {
+    let parsedImages = [];
+    if (images && typeof images === "string") {
+      try {
+        parsedImages = JSON.parse(images).map((img) =>
+          img.startsWith("/uploads/") ? img.replace("/uploads/", "") : img
+        );
+      } catch (e) {
+        console.warn("⚠️ Không thể parse images từ req.body.images");
+      }
+    }
+
+    const newImages = req.files?.map((file) => file.filename) || [];
+
+    const allImages = [...parsedImages, ...newImages];
+
 
   try {
     let parsedImages = [];
@@ -74,7 +98,15 @@ const createGround = async (req, res) => {
       latitude,
       longitude,
       pricePerHour,
+      pricePerHour,
       serviceFee,
+      status,
+      description,
+      facilities,
+      rules,
+      policies,
+      ownerId,
+      images: allImages,
       status,
       description,
       facilities,
@@ -88,9 +120,15 @@ const createGround = async (req, res) => {
       message: "Ground created successfully",
       court: newCourt,
     });
+
+    return res.status(201).json({
+      message: "Ground created successfully",
+      court: newCourt,
+    });
   } catch (error) {
     console.error("Error creating ground:", error);
 
+    req.files?.forEach((file) => {
     req.files?.forEach((file) => {
       fs.unlink(path.join(__dirname, "..", "uploads", file.filename), (err) => {
         if (err) console.error("Error deleting file:", file.filename, err);
@@ -111,6 +149,12 @@ const updateGround = async (req, res) => {
     latitude,
     longitude,
     serviceFee,
+    status,
+    description,
+    facilities,
+    rules,
+    policies,
+    images,
     status,
     description,
     facilities,
@@ -142,7 +186,25 @@ const updateGround = async (req, res) => {
     const newImages = req.files?.map((file) => file.filename) || [];
 
     const updatedImages = [...parsedImages, ...newImages];
+    // Parse images từ body nếu có
+    let parsedImages = [];
+    if (images && typeof images === "string") {
+      try {
+        parsedImages = JSON.parse(images).map((img) => {
+          return img.startsWith("/uploads/")
+            ? img.replace("/uploads/", "")
+            : img;
+        });
+      } catch (e) {
+        console.warn("⚠️ Không thể parse images từ req.body.images");
+      }
+    }
 
+    const newImages = req.files?.map((file) => file.filename) || [];
+
+    const updatedImages = [...parsedImages, ...newImages];
+
+    // Update các trường
     // Update các trường
     existingCourt.name = name ?? existingCourt.name;
     existingCourt.address = address ?? existingCourt.address;
@@ -152,6 +214,11 @@ const updateGround = async (req, res) => {
     existingCourt.latitude = latitude ?? existingCourt.latitude;
     existingCourt.longitude = longitude ?? existingCourt.longitude;
     existingCourt.serviceFee = serviceFee ?? existingCourt.serviceFee;
+    existingCourt.status = status ?? existingCourt.status;
+    existingCourt.description = description ?? existingCourt.description;
+    existingCourt.facilities = facilities ?? existingCourt.facilities;
+    existingCourt.rules = rules ?? existingCourt.rules;
+    existingCourt.policies = policies ?? existingCourt.policies;
     existingCourt.status = status ?? existingCourt.status;
     existingCourt.description = description ?? existingCourt.description;
     existingCourt.facilities = facilities ?? existingCourt.facilities;
@@ -174,6 +241,26 @@ const updateGround = async (req, res) => {
     });
 
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const updateGroundStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const court = await Court.findById(id);
+    if (!court) {
+      return res.status(404).json({ message: "Court not found" });
+    }
+
+    court.status = status;
+    await court.save();
+
+    res.status(200).json({ message: "Status updated successfully", court });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 

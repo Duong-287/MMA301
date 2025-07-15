@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { API_URL } from "../utils/config";
+const API_URL = "http://192.168.0.192:3000";
+
 export const getCourtsByOwner = async (ownerId) => {
   try {
     const token = await AsyncStorage.getItem("token");
