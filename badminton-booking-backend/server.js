@@ -36,7 +36,7 @@ app.post("/upload", upload.array("files"), (req, res) => {
   }
 
   // Trả về URL các file đã upload
-  const uploadedFiles = req.files.map(file => `/uploads/${file.filename}`);
+  const uploadedFiles = req.files.map((file) => `/uploads/${file.filename}`);
 
   res.status(200).json({
     message: "Files uploaded successfully",

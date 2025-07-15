@@ -4,10 +4,9 @@ const path = require("path");
 
 const getAllGrounds = async (req, res) => {
   try {
-    const courtList = await Court.find().populate(
-      "ownerId",
-      "_id username email fullName phone address"
-    );
+    const courtList = await Court.find()
+      .sort({ createdAt: -1, updatedAt: -1 })
+      .populate("ownerId", "_id username email fullName phone address");
     console.log("Fetching all grounds:", courtList);
     return res.status(200).json(courtList);
   } catch (error) {
@@ -39,31 +38,57 @@ const createGround = async (req, res) => {
     longitude,
     pricePerHour,
     serviceFee,
+    status,
+    description,
+    facilities,
+    rules,
+    policies,
+    images,
+    ownerId,
   } = req.body;
-  const { ownerId } = req.user;
-  const images = req.files.map((file) => `/uploads/${file.filename}`);
 
   try {
+    let parsedImages = [];
+    if (images && typeof images === "string") {
+      try {
+        parsedImages = JSON.parse(images).map((img) =>
+          img.startsWith("/uploads/") ? img.replace("/uploads/", "") : img
+        );
+      } catch (e) {
+        console.warn("⚠️ Không thể parse images từ req.body.images");
+      }
+    }
+
+    const newImages = req.files?.map((file) => file.filename) || [];
+
+    const allImages = [...parsedImages, ...newImages];
+
     const newCourt = await Court.create({
       name,
-      images,
-      ownerId,
       address,
       startTime,
       endTime,
-      pricePerHour,
       latitude,
       longitude,
+      pricePerHour,
       serviceFee,
+      status,
+      description,
+      facilities,
+      rules,
+      policies,
+      ownerId,
+      images: allImages,
     });
-    return res
-      .status(201)
-      .json({ message: "Ground created successfully", court: newCourt });
+
+    return res.status(201).json({
+      message: "Ground created successfully",
+      court: newCourt,
+    });
   } catch (error) {
     console.error("Error creating ground:", error);
 
-    // rollback file tránh rác
-    req.files.forEach((file) => {
+    req.files?.forEach((file) => {
       fs.unlink(path.join(__dirname, "..", "uploads", file.filename), (err) => {
         if (err) console.error("Error deleting file:", file.filename, err);
       });
@@ -84,21 +109,39 @@ const updateGround = async (req, res) => {
     latitude,
     longitude,
     serviceFee,
+    status,
+    description,
+    facilities,
+    rules,
+    policies,
+    images,
   } = req.body;
 
-  const newImages = req.files.map((file) => `/uploads/${file.filename}`);
-
   try {
-    // Lấy court cũ
     const existingCourt = await Court.findById(id);
     if (!existingCourt) {
       return res.status(404).json({ message: "Ground not found" });
     }
 
-    // Gộp ảnh cũ và ảnh mới
-    const updatedImages = [...existingCourt.images, ...newImages];
+    // Parse images từ body nếu có
+    let parsedImages = [];
+    if (images && typeof images === "string") {
+      try {
+        parsedImages = JSON.parse(images).map((img) => {
+          return img.startsWith("/uploads/")
+            ? img.replace("/uploads/", "")
+            : img;
+        });
+      } catch (e) {
+        console.warn("⚠️ Không thể parse images từ req.body.images");
+      }
+    }
 
-    // Update
+    const newImages = req.files?.map((file) => file.filename) || [];
+
+    const updatedImages = [...parsedImages, ...newImages];
+
+    // Update các trường
     existingCourt.name = name ?? existingCourt.name;
     existingCourt.address = address ?? existingCourt.address;
     existingCourt.startTime = startTime ?? existingCourt.startTime;
@@ -107,6 +150,11 @@ const updateGround = async (req, res) => {
     existingCourt.latitude = latitude ?? existingCourt.latitude;
     existingCourt.longitude = longitude ?? existingCourt.longitude;
     existingCourt.serviceFee = serviceFee ?? existingCourt.serviceFee;
+    existingCourt.status = status ?? existingCourt.status;
+    existingCourt.description = description ?? existingCourt.description;
+    existingCourt.facilities = facilities ?? existingCourt.facilities;
+    existingCourt.rules = rules ?? existingCourt.rules;
+    existingCourt.policies = policies ?? existingCourt.policies;
     existingCourt.images = updatedImages;
 
     await existingCourt.save();
@@ -117,7 +165,6 @@ const updateGround = async (req, res) => {
   } catch (error) {
     console.error("Error updating ground:", error);
 
-    // rollback file nếu lỗi
     req.files.forEach((file) => {
       fs.unlink(path.join(__dirname, "..", "uploads", file.filename), (err) => {
         if (err) console.error("Error deleting file:", file.filename, err);
@@ -125,6 +172,26 @@ const updateGround = async (req, res) => {
     });
 
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const updateGroundStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  try {
+    const court = await Court.findById(id);
+    if (!court) {
+      return res.status(404).json({ message: "Court not found" });
+    }
+
+    court.status = status;
+    await court.save();
+
+    res.status(200).json({ message: "Status updated successfully", court });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -148,4 +215,5 @@ module.exports = {
   createGround,
   updateGround,
   deleteGround,
+  updateGroundStatus,
 };
