@@ -111,7 +111,7 @@ const HomeScreen = () => {
               <View style={styles.logoGlow} />
             </View>
             <View>
-              <Text style={styles.appName}>ALOBO</Text>
+              <Text style={styles.appName}>Smäsh Badminton</Text>
               <Text style={styles.dateText}>{currentDate}</Text>
             </View>
           </View>
@@ -226,7 +226,12 @@ const HomeScreen = () => {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.bookButton}>
+            <TouchableOpacity
+              style={styles.bookButton}
+              onPress={() =>
+                navigation.navigate("Booking", { courtId: ground._id })
+              }
+            >
               <Text style={styles.bookButtonText}>⚡ ĐẶT LỊCH NGAY</Text>
               <View style={styles.bookButtonGlow} />
             </TouchableOpacity>

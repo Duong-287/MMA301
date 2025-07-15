@@ -1,8 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-// Base URL - thay đổi theo môi trường của bạn
-import { API_URL } from "../utils/config"; // hoặc URL backend của bạn
+import { API_URL } from "../utils/config"; 
 
 // Tạo axios instance với config chung
 const api = axios.create({

@@ -11,16 +11,22 @@ import {
   Alert,
   TextInput,
   Modal,
+  Platform,
 } from "react-native";
-import { courtAPI } from "../../services/court";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { getCourtById } from "../../services/court";
 import { bookingAPI } from "../../services/booking";
 
 const BookingScreen = ({ navigation, route }) => {
   const { courtId, selectedDate } = route?.params || {};
+  console.log("📌 Route params:", route?.params);
+  console.log("📌 courtId:", courtId);
 
   const [courts, setCourts] = useState([]);
   const [selectedCourt, setSelectedCourt] = useState(null);
-  const [bookingDate, setBookingDate] = useState(selectedDate || new Date());
+  const [bookingDate, setBookingDate] = useState(
+    selectedDate ? new Date(selectedDate) : new Date()
+  );
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,12 +37,21 @@ const BookingScreen = ({ navigation, route }) => {
     email: "",
   });
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   useEffect(() => {
     loadCourts();
+    console.log("🔄 Đang load thông tin sân...");
   }, []);
 
   useEffect(() => {
-    if (selectedCourt) {
+    console.log(
+      "📣 useEffect triggered - selectedCourt:",
+      selectedCourt,
+      "bookingDate:",
+      bookingDate
+    );
+    if (selectedCourt && bookingDate) {
       loadAvailableSlots();
     }
   }, [selectedCourt, bookingDate]);
@@ -44,25 +59,36 @@ const BookingScreen = ({ navigation, route }) => {
   const loadCourts = async () => {
     try {
       setLoading(true);
-      const response = await courtAPI.getAllCourts();
+      let courtList = [];
 
-      if (response.success) {
-        const activeCourts = response.data.filter(
-          (court) => court.status === "active"
-        );
-        setCourts(activeCourts);
+      if (courtId) {
+        const response = await getCourtById(courtId);
+        console.log("📌 API getCourtById response:", response);
 
-        // If courtId is provided, select that court
-        if (courtId) {
-          const court = activeCourts.find((c) => c._id === courtId);
-          if (court) {
-            setSelectedCourt(court);
-          }
-        } else if (activeCourts.length > 0) {
-          setSelectedCourt(activeCourts[0]);
+        if (response.success) {
+          courtList = [response.data.court];
         }
       }
+
+      const activeCourts = courtList.filter(
+        (court) => court.status === "active"
+      );
+      console.log("📌 Active courts:", activeCourts);
+
+      setCourts(activeCourts);
+
+      if (courtId) {
+        const court = activeCourts.find((c) => c._id === courtId);
+        if (court) {
+          console.log("📌 Selected court:", court);
+          setSelectedCourt(court);
+          setTimeout(() => loadAvailableSlots(), 0);
+        }
+      } else if (activeCourts.length > 0) {
+        setSelectedCourt(activeCourts[0]);
+      }
     } catch (error) {
+      console.log("❌ Lỗi khi load sân:", error);
       Alert.alert("Lỗi", error.message);
     } finally {
       setLoading(false);
@@ -70,28 +96,30 @@ const BookingScreen = ({ navigation, route }) => {
   };
 
   const loadAvailableSlots = async () => {
-    if (!selectedCourt) return;
-
+    if (!selectedCourt || !bookingDate) return;
+    console.log("📌 Bắt đầu loadAvailableSlots");
+    console.log("📌 Court:", selectedCourt);
+    console.log("📌 Ngày:", bookingDate);
     try {
       const response = await bookingAPI.getCourtSchedule(
         selectedCourt._id,
         bookingDate
       );
-
+      console.log("📌 Load slots for:", selectedCourt.name, bookingDate);
       if (response.success) {
-        // Generate time slots and check availability
         const slots = generateTimeSlots(
           selectedCourt.startTime,
           selectedCourt.endTime
         );
+        console.log("📌 Tất cả khung giờ có thể:", slots);
         const schedule =
           response.data[bookingDate.toISOString().split("T")[0]] || {};
-
+        console.log("📌 Lịch đặt sân hiện có:", schedule);
         const availableSlots = slots.filter((slot) => {
           const slotInfo = schedule[slot];
           return !slotInfo || slotInfo.status === "available";
         });
-
+        console.log("📌 Khung giờ còn trống:", availableSlots);
         setAvailableSlots(availableSlots);
       }
     } catch (error) {
@@ -102,13 +130,11 @@ const BookingScreen = ({ navigation, route }) => {
 
   const generateTimeSlots = (startTime, endTime) => {
     const slots = [];
-    const start = Number.parseInt(startTime.split(":")[0]);
-    const end = Number.parseInt(endTime.split(":")[0]);
-
+    const start = parseInt(startTime.split(":")[0]);
+    const end = parseInt(endTime.split(":")[0]);
     for (let hour = start; hour < end; hour++) {
       slots.push(`${hour.toString().padStart(2, "0")}:00`);
     }
-
     return slots;
   };
 
@@ -128,29 +154,27 @@ const BookingScreen = ({ navigation, route }) => {
         courtId: selectedCourt._id,
         date: bookingDate.toISOString().split("T")[0],
         startTime: selectedSlot,
-        endTime: `${Number.parseInt(selectedSlot.split(":")[0]) + 1}:00`,
+        endTime: `${parseInt(selectedSlot.split(":")[0]) + 1}:00`,
         customerName: customerInfo.name,
         customerPhone: customerInfo.phone,
         customerEmail: customerInfo.email,
-        totalAmount: selectedCourt.pricePerHour + selectedCourt.serviceFee,
+        totalAmount:
+          parseInt(selectedCourt.pricePerHour) +
+          parseInt(selectedCourt.serviceFee),
       };
-
+      console.log("📤 Dữ liệu gửi booking:", bookingData);
       const response = await bookingAPI.createBooking(bookingData);
-
+      console.log("✅ Booking thành công:", response);
       if (response.success) {
-        Alert.alert(
-          "Thành công",
-          "Đặt sân thành công! Vui lòng chờ xác nhận.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                setShowBookingModal(false);
-                navigation.navigate("BookingHistory");
-              },
+        Alert.alert("Thành công", "Đặt sân thành công!", [
+          {
+            text: "OK",
+            onPress: () => {
+              setShowBookingModal(false);
+              navigation.navigate("BookingHistory");
             },
-          ]
-        );
+          },
+        ]);
       }
     } catch (error) {
       Alert.alert("Lỗi", error.message);
@@ -167,17 +191,23 @@ const BookingScreen = ({ navigation, route }) => {
   };
 
   const formatCurrency = (amount) => {
-    return amount?.toLocaleString() || "0";
+    return amount?.toLocaleString("vi-VN") + " VNĐ";
+  };
+
+  const onDateChange = (event, selectedDate) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      setBookingDate(selectedDate);
+    }
   };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#2E7D32" />
-          <Text style={styles.loadingText}>Đang tải thông tin sân...</Text>
-        </View>
+        <ActivityIndicator size="large" color="#2E7D32" />
+        <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
       </SafeAreaView>
     );
   }
@@ -185,132 +215,112 @@ const BookingScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#2E7D32" />
-
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Đặt sân</Text>
-        <View style={styles.placeholder} />
+        <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Court Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chọn sân</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {courts.map((court) => (
-              <TouchableOpacity
-                key={court._id}
-                style={[
-                  styles.courtCard,
-                  selectedCourt?._id === court._id && styles.courtCardSelected,
-                ]}
-                onPress={() => setSelectedCourt(court)}
-              >
-                <Text style={styles.courtName}>{court.name}</Text>
-                <Text style={styles.courtPrice}>
-                  {formatCurrency(court.pricePerHour)} VNĐ/giờ
-                </Text>
-                <Text style={styles.courtTime}>
-                  {court.startTime} - {court.endTime}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+      <ScrollView style={styles.content}>
+        {/* Court List */}
+        <Text style={styles.sectionTitle}>Chọn sân</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {courts.map((court) => (
+            <TouchableOpacity
+              key={court._id}
+              style={[
+                styles.courtCard,
+                selectedCourt?._id === court._id && styles.courtCardSelected,
+              ]}
+              onPress={() => setSelectedCourt(court)}
+            >
+              <Text style={styles.courtName}>{court.name}</Text>
+              <Text>{formatCurrency(court.pricePerHour)} / giờ</Text>
+              <Text>
+                {court.startTime} - {court.endTime}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        {/* Date Selection */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Chọn ngày</Text>
-          <TouchableOpacity style={styles.dateSelector}>
-            <Text style={styles.dateText}>{formatDate(bookingDate)}</Text>
-            <Text style={styles.dateIcon}>📅</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Time Slots */}
-        {selectedCourt && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Chọn khung giờ</Text>
-            <View style={styles.slotsGrid}>
-              {availableSlots.map((slot) => (
-                <TouchableOpacity
-                  key={slot}
-                  style={[
-                    styles.slotButton,
-                    selectedSlot === slot && styles.slotButtonSelected,
-                  ]}
-                  onPress={() => setSelectedSlot(slot)}
-                >
-                  <Text
-                    style={[
-                      styles.slotText,
-                      selectedSlot === slot && styles.slotTextSelected,
-                    ]}
-                  >
-                    {slot} - {Number.parseInt(slot.split(":")[0]) + 1}:00
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {availableSlots.length === 0 && (
-              <View style={styles.noSlotsContainer}>
-                <Text style={styles.noSlotsText}>Không có khung giờ trống</Text>
-              </View>
-            )}
-          </View>
+        {/* Date Picker */}
+        <Text style={styles.sectionTitle}>Chọn ngày</Text>
+        <TouchableOpacity
+          style={styles.dateSelector}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Text style={styles.dateText}>{formatDate(bookingDate)}</Text>
+          <Text style={styles.dateIcon}>📅</Text>
+        </TouchableOpacity>
+        {showDatePicker && Platform.OS === "android" && (
+          <DateTimePicker
+            value={bookingDate}
+            mode="date"
+            display="default"
+            onChange={onDateChange}
+          />
         )}
 
-        {/* Booking Summary */}
+        {/* iOS Date Picker (hiển thị luôn trong giao diện) */}
+        {Platform.OS === "ios" && (
+          <DateTimePicker
+            value={bookingDate}
+            mode="date"
+            display="spinner"
+            onChange={onDateChange}
+            style={{ backgroundColor: "white", marginTop: 10 }}
+          />
+        )}
+
+        {/* Slot Selection */}
+        <Text style={styles.sectionTitle}>Khung giờ</Text>
+        <View style={styles.slotsGrid}>
+          {availableSlots.length > 0 ? (
+            availableSlots.map((slot) => (
+              <TouchableOpacity
+                key={slot}
+                style={[
+                  styles.slotButton,
+                  selectedSlot === slot && styles.slotButtonSelected,
+                ]}
+                onPress={() => setSelectedSlot(slot)}
+              >
+                <Text
+                  style={[
+                    styles.slotText,
+                    selectedSlot === slot && styles.slotTextSelected,
+                  ]}
+                >
+                  {slot} - {parseInt(slot.split(":")[0]) + 1}:00
+                </Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text>Không có khung giờ trống</Text>
+          )}
+        </View>
+
+        {/* Booking Info */}
         {selectedCourt && selectedSlot && (
-          <View style={styles.summarySection}>
+          <View style={{ marginTop: 20 }}>
             <Text style={styles.sectionTitle}>Thông tin đặt sân</Text>
-            <View style={styles.summaryCard}>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Sân:</Text>
-                <Text style={styles.summaryValue}>{selectedCourt.name}</Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Ngày:</Text>
-                <Text style={styles.summaryValue}>
-                  {formatDate(bookingDate)}
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Giờ:</Text>
-                <Text style={styles.summaryValue}>
-                  {selectedSlot} -{" "}
-                  {Number.parseInt(selectedSlot.split(":")[0]) + 1}:00
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Giá sân:</Text>
-                <Text style={styles.summaryValue}>
-                  {formatCurrency(selectedCourt.pricePerHour)} VNĐ
-                </Text>
-              </View>
-              <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Phí dịch vụ:</Text>
-                <Text style={styles.summaryValue}>
-                  {formatCurrency(selectedCourt.serviceFee)} VNĐ
-                </Text>
-              </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Tổng cộng:</Text>
-                <Text style={styles.totalValue}>
-                  {formatCurrency(
-                    selectedCourt.pricePerHour + selectedCourt.serviceFee
-                  )}{" "}
-                  VNĐ
-                </Text>
-              </View>
-            </View>
+            <Text>Sân: {selectedCourt.name}</Text>
+            <Text>Ngày: {formatDate(bookingDate)}</Text>
+            <Text>
+              Giờ: {selectedSlot} - {parseInt(selectedSlot.split(":")[0]) + 1}
+              :00
+            </Text>
+            <Text>Giá: {formatCurrency(selectedCourt.pricePerHour)}</Text>
+            <Text>Phí dịch vụ: {formatCurrency(selectedCourt.serviceFee)}</Text>
+            <Text style={{ fontWeight: "bold" }}>
+              Tổng cộng:{" "}
+              {formatCurrency(
+                parseInt(selectedCourt.pricePerHour) +
+                  parseInt(selectedCourt.serviceFee)
+              )}
+            </Text>
           </View>
         )}
 
@@ -325,63 +335,50 @@ const BookingScreen = ({ navigation, route }) => {
         )}
       </ScrollView>
 
-      {/* Booking Modal */}
+      {/* Modal */}
       <Modal visible={showBookingModal} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Thông tin khách hàng</Text>
-              <TouchableOpacity onPress={() => setShowBookingModal(false)}>
-                <Text style={styles.modalCloseButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Họ và tên *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={customerInfo.name}
-                  onChangeText={(text) =>
-                    setCustomerInfo({ ...customerInfo, name: text })
-                  }
-                  placeholder="Nhập họ và tên"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Số điện thoại *</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={customerInfo.phone}
-                  onChangeText={(text) =>
-                    setCustomerInfo({ ...customerInfo, phone: text })
-                  }
-                  placeholder="Nhập số điện thoại"
-                  keyboardType="phone-pad"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Email</Text>
-                <TextInput
-                  style={styles.textInput}
-                  value={customerInfo.email}
-                  onChangeText={(text) =>
-                    setCustomerInfo({ ...customerInfo, email: text })
-                  }
-                  placeholder="Nhập email (tùy chọn)"
-                  keyboardType="email-address"
-                />
-              </View>
-
-              <TouchableOpacity
-                style={styles.confirmButton}
-                onPress={handleBooking}
+            <Text style={styles.modalTitle}>Thông tin khách hàng</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Họ và tên"
+              value={customerInfo.name}
+              onChangeText={(text) =>
+                setCustomerInfo({ ...customerInfo, name: text })
+              }
+            />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Số điện thoại"
+              value={customerInfo.phone}
+              onChangeText={(text) =>
+                setCustomerInfo({ ...customerInfo, phone: text })
+              }
+              keyboardType="phone-pad"
+            />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Email"
+              value={customerInfo.email}
+              onChangeText={(text) =>
+                setCustomerInfo({ ...customerInfo, email: text })
+              }
+              keyboardType="email-address"
+            />
+            <TouchableOpacity
+              style={styles.confirmButton}
+              onPress={handleBooking}
+            >
+              <Text style={styles.confirmButtonText}>Xác nhận đặt sân</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowBookingModal(false)}>
+              <Text
+                style={{ textAlign: "center", marginTop: 10, color: "red" }}
               >
-                <Text style={styles.confirmButtonText}>Xác nhận đặt sân</Text>
-              </TouchableOpacity>
-            </ScrollView>
+                Hủy
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

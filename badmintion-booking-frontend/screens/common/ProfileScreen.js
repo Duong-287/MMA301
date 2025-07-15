@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavigation from "../../components/BottomNavigation";
 import Feather from "react-native-vector-icons/Feather";
-import { getUserProfile } from "../../services/customer";
+import { getUserProfile, updateUserProfile } from "../../services/customer";
 
 const { width } = Dimensions.get("window");
 
@@ -66,12 +66,22 @@ export default function ProfileScreen() {
     { id: "settings", label: "Cài đặt", icon: "settings" },
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    Alert.alert("Thành công", "Thông tin đã được cập nhật!");
+  const handleSave = async () => {
+    try {
+      const result = await updateUserProfile(profile); // Gửi thông tin mới
+
+      if (result.success) {
+        Alert.alert("✅ Thành công", "Thông tin đã được cập nhật!");
+        setIsEditing(false);
+      } else {
+        Alert.alert("❌ Lỗi", result.message || "Không thể cập nhật.");
+      }
+    } catch (error) {
+      Alert.alert("❌ Lỗi", "Đã xảy ra lỗi khi cập nhật.");
+    }
   };
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -174,7 +184,7 @@ export default function ProfileScreen() {
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
             value={profile.fullName}
-            onChangeText={(value) => handleInputChange("name", value)}
+            onChangeText={(value) => handleInputChange("fullName", value)}
             editable={isEditing}
           />
         </View>

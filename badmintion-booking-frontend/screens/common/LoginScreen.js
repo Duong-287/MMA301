@@ -189,7 +189,7 @@ export default function LoginScreen() {
         <View style={styles.logo}>
           <Text style={styles.logoText}>🏸</Text>
         </View>
-        <Text style={styles.appName}>BadmintonPro</Text>
+        <Text style={styles.appName}>Smäsh Badminton</Text>
         <Text style={styles.appSlogan}>Đặt sân cầu lông dễ dàng</Text>
       </View>
     </View>
