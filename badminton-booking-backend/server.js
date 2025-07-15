@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const connectDB = require("./config/db");
+const cors = require("cors");
 const {
   verifyToken,
   isAdmin,
@@ -79,6 +80,9 @@ app.use((err, req, res, next) => {
 });
 
 // Khởi động server
+app.use(cors({
+  origin: "*" 
+}));
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server is running at: http://localhost:${PORT}`);

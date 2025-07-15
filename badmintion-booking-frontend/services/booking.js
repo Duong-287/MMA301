@@ -2,9 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // Base URL - thay đổi theo môi trường của bạn
-const BASE_URL = "http://localhost:3000/owner"; // hoặc URL backend của bạn
+const BASE_URL = "http://192.168.0.102:3000";
 
-// Tạo axios instance với config chung
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
@@ -13,12 +12,12 @@ const api = axios.create({
   },
 });
 
-// Interceptor để thêm token vào header
+// interceptor cho token async
 api.interceptors.request.use(
-  (config) => {
-    const token = AsyncStorage.getItem("authorization"); // hoặc AsyncStorage trong React Native
+  async (config) => {
+    const token = await AsyncStorage.getItem("token"); 
     if (token) {
-      config.headers.Authorization = `${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -68,12 +67,10 @@ export const bookingAPI = {
   },
 
   // Lấy danh sách booking theo owner
-  getBookingsByOwner: async (ownerId, filters = {}) => {
+  getBookingsByOwner: async () => {
     try {
-      const response = await api.get(`/bookings/owner/${ownerId}`, {
-        params: filters,
-      });
-      return response.data;
+      const response = await api.get("/owner/grounds");
+      return response?.data;
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Không thể lấy danh sách booking"

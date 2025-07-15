@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-const API_URL = "http://192.168.0.192:3000";
+const API_URL = "http://localhost:3000";
 
 export const getCourtsByOwner = async (ownerId) => {
   try {
@@ -45,8 +45,8 @@ export const updateCourt = async (courtId, updatedData) => {
     );
     return { success: true, data: response.data };
   } catch (error) {
-    console.log("Lỗi chỉnh sửa trạng thái sân:", error);
-    return { success: false, message: "Không thể cập nhật trạng thái sân." };
+    console.log("Lỗi chỉnh sửa sân:", error);
+    return { success: false, message: "Không thể cập nhật sân." };
   }
 };
 

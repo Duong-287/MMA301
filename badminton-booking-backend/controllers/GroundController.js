@@ -16,6 +16,24 @@ const getAllGrounds = async (req, res) => {
   }
 };
 
+const getAllGroundsByOwner = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const listCourt = await Court.find({ ownerId: userId }); // đúng cú pháp
+
+    return res.status(200).json({
+      success: true,
+      data: listCourt,
+    });
+  } catch (error) {
+    console.error("Error getting courts by owner:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
 const getGroundById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -84,6 +102,7 @@ const updateGround = async (req, res) => {
     latitude,
     longitude,
     serviceFee,
+    status,
   } = req.body;
 
   const newImages = req.files.map((file) => `/uploads/${file.filename}`);
@@ -107,6 +126,7 @@ const updateGround = async (req, res) => {
     existingCourt.latitude = latitude ?? existingCourt.latitude;
     existingCourt.longitude = longitude ?? existingCourt.longitude;
     existingCourt.serviceFee = serviceFee ?? existingCourt.serviceFee;
+    existingCourt.status = status ?? existingCourt.status;
     existingCourt.images = updatedImages;
 
     await existingCourt.save();
@@ -143,6 +163,7 @@ const deleteGround = async (req, res) => {
 };
 
 module.exports = {
+  getAllGroundsByOwner,
   getAllGrounds,
   getGroundById,
   createGround,
