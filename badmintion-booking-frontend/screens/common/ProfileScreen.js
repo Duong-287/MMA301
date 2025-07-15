@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import BottomNavigation from "../../components/BottomNavigation";
 import Feather from "react-native-vector-icons/Feather";
+import { getUserProfile } from "../../services/customer";
 
 const { width } = Dimensions.get("window");
 
@@ -26,17 +27,8 @@ export default function ProfileScreen() {
     promotion: false,
   });
 
-  const [profile, setProfile] = useState({
-    name: "Nguyễn Văn An",
-    email: "nguyenvanan@email.com",
-    phone: "0123 456 789",
-    location: "Hà Nội",
-    level: "Trung bình",
-    position: "Đánh đôi",
-    experience: "3 năm",
-    bio: "Yêu thích cầu lông, thường chơi vào cuối tuần. Tìm kiếm đối thủ cùng trình độ để cùng luyện tập.",
-  });
-
+  const [profile, setProfile] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const recentBookings = [
     {
       date: "15/12/2024",
@@ -88,10 +80,12 @@ export default function ProfileScreen() {
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>
-            {profile.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+            {profile.fullName
+              ? profile.fullName
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+              : ""}
           </Text>
         </View>
         <TouchableOpacity style={styles.cameraButton}>
@@ -101,28 +95,32 @@ export default function ProfileScreen() {
 
       <View style={styles.profileInfo}>
         <View style={styles.nameContainer}>
-          <Text style={styles.name}>{profile.name}</Text>
+          <Text style={styles.name}>{profile.fullName || "Người dùng"}</Text>
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>{profile.level}</Text>
+            <Text style={styles.levelText}>{profile.level || "Chưa rõ"}</Text>
           </View>
         </View>
 
         <View style={styles.contactInfo}>
           <View style={styles.contactItem}>
             <Feather name="mail" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.email}</Text>
+            <Text style={styles.contactText}>
+              {profile.email || "Chưa có email"}
+            </Text>
           </View>
           <View style={styles.contactItem}>
             <Feather name="phone" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.phone}</Text>
+            <Text style={styles.contactText}>
+              {profile.phone || "Chưa có SĐT"}
+            </Text>
           </View>
           <View style={styles.contactItem}>
-            <Feather name="location" size={14} color="#666" />
-            <Text style={styles.contactText}>{profile.location}</Text>
+            <Feather name="map-pin" size={14} color="#666" />
+            <Text style={styles.contactText}>
+              {profile.address || "Chưa có địa điểm"}
+            </Text>
           </View>
         </View>
-
-        <Text style={styles.bio}>{profile.bio}</Text>
       </View>
 
       <TouchableOpacity
@@ -175,7 +173,7 @@ export default function ProfileScreen() {
           <Text style={styles.inputLabel}>Họ và tên</Text>
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
-            value={profile.name}
+            value={profile.fullName}
             onChangeText={(value) => handleInputChange("name", value)}
             editable={isEditing}
           />
@@ -207,14 +205,15 @@ export default function ProfileScreen() {
           <Text style={styles.inputLabel}>Địa điểm</Text>
           <TextInput
             style={[styles.input, !isEditing && styles.disabledInput]}
-            value={profile.location}
+            value={profile.address}
             onChangeText={(value) => handleInputChange("location", value)}
             editable={isEditing}
           />
         </View>
       </View>
 
-      <View style={styles.section}>
+      {/* Thông tin cầu lông */}
+      {/* <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Feather name="target" size={20} color="#3B82F6" />
           <Text style={styles.sectionTitle}>Thông tin cầu lông</Text>
@@ -259,7 +258,7 @@ export default function ProfileScreen() {
             numberOfLines={3}
           />
         </View>
-      </View>
+      </View> */}
     </View>
   );
 
@@ -460,6 +459,27 @@ export default function ProfileScreen() {
     }
   };
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const result = await getUserProfile();
+      if (result.success) {
+        setProfile(result.data);
+      } else {
+        Alert.alert("Lỗi", result.message);
+      }
+      setIsLoading(false);
+    };
+    fetchProfile();
+  }, []);
+  if (isLoading || !profile) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 50 }}>
+          Đang tải thông tin...
+        </Text>
+      </SafeAreaView>
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
