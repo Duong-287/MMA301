@@ -12,12 +12,12 @@ const api = axios.create({
   },
 });
 
-// Interceptor để thêm token vào header
+// interceptor cho token async
 api.interceptors.request.use(
-  (config) => {
-    const token = AsyncStorage.getItem("authorization"); // hoặc AsyncStorage trong React Native
+  async (config) => {
+    const token = await AsyncStorage.getItem("token"); 
     if (token) {
-      config.headers.Authorization = `${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },

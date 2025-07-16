@@ -51,3 +51,7 @@ export const updateUserProfile = async (userData) => {
     return { success: false, message };
   }
 };
+
+export const userWallet = async () => {
+  
+}
