@@ -7,10 +7,12 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import BottomNavigation from "./BottomNavigation";
+import { addMoneyToWallet, getCustomerWallet } from "../services/wallet";
 
 const AccountLoggedIn = ({
   userName,
@@ -29,51 +31,62 @@ const AccountLoggedIn = ({
   onLogoutPress,
 }) => {
   const [wallet, setWallet] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [amountToAdd, setAmountToAdd] = useState("");
 
   useEffect(() => {
     const fetchWallet = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token"); 
-        const res = await axios.get("http://localhost:5000/api/wallet", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setWallet(res.data.wallet);
-      } catch (error) {
-        console.error("Error fetching wallet:", error);
+      const result = await getCustomerWallet();
+      if (result.success) {
+        setWallet(result.data);
+      } else {
+        Alert.alert("Lỗi", result.message || "Không thể lấy ví");
       }
     };
-
     fetchWallet();
   }, []);
+
+  const handleDeposit = async () => {
+    const amount = parseInt(amountToAdd);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert("Lỗi", "Vui lòng nhập số tiền hợp lệ");
+      return;
+    }
+
+    const result = await addMoneyToWallet(amount);
+    if (result.success) {
+      Alert.alert("Thành công", "Nạp tiền thành công");
+
+      // 🔁 Gọi lại API để lấy số dư ví mới nhất
+      const updatedWallet = await getCustomerWallet();
+      if (updatedWallet.success) {
+        setWallet(updatedWallet.data);
+      }
+
+      setModalVisible(false);
+      setAmountToAdd("");
+    } else {
+      Alert.alert("Thất bại", result.message || "Không thể nạp tiền");
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
-
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollContainer}>
         <View style={styles.headerBackground}>
           <View style={styles.headerOverlay}>
             <View style={styles.headerContent}>
+              {/* Header Actions */}
               <View style={styles.topActions}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onNotificationPress}
-                >
+                <TouchableOpacity onPress={onNotificationPress}>
                   <View
                     style={[styles.actionIcon, { backgroundColor: "#4CAF50" }]}
                   >
                     <Text style={styles.actionIconText}>🔔</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onCalendarPress}
-                >
+                <TouchableOpacity onPress={onCalendarPress}>
                   <View
                     style={[styles.actionIcon, { backgroundColor: "#FFC107" }]}
                   >
@@ -82,15 +95,15 @@ const AccountLoggedIn = ({
                 </TouchableOpacity>
               </View>
 
+              {/* Avatar + Username */}
               <View style={styles.avatarContainer}>
                 <View style={styles.userAvatar}>
                   <Text style={styles.userInitial}>{userInitial}</Text>
                 </View>
               </View>
-
               <Text style={styles.userName}>{userName}</Text>
 
-              {/* Hiển thị số dư ví */}
+              {/* Số dư ví */}
               {wallet && (
                 <View style={{ marginTop: 10, alignItems: "center" }}>
                   <Text style={{ fontSize: 16, color: "#555" }}>Số dư ví:</Text>
@@ -106,7 +119,7 @@ const AccountLoggedIn = ({
                 </View>
               )}
 
-              {/* Các hành động nhanh */}
+              {/* Các nút hành động nhanh */}
               <View style={styles.quickActionsContainer}>
                 <TouchableOpacity
                   style={styles.quickAction}
@@ -147,12 +160,23 @@ const AccountLoggedIn = ({
                   </View>
                   <Text style={styles.quickActionText}>Thành viên</Text>
                 </TouchableOpacity>
+
+                {/* Nút mở modal nạp tiền */}
+                <TouchableOpacity
+                  style={styles.quickAction}
+                  onPress={() => setModalVisible(true)}
+                >
+                  <View style={styles.quickActionIcon}>
+                    <Text style={styles.quickActionEmoji}>💵</Text>
+                  </View>
+                  <Text style={styles.quickActionText}>Nạp tiền</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Nội dung menu */}
+        {/* Menu */}
         <View style={styles.menuContent}>
           <View style={styles.menuSection}>
             <Text style={styles.sectionTitle}>Hoạt động</Text>
@@ -229,6 +253,51 @@ const AccountLoggedIn = ({
           </View>
         </View>
       </ScrollView>
+
+      {/* Modal nhập số tiền */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text
+              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
+            >
+              Nhập số tiền muốn nạp (đ)
+            </Text>
+            <TextInput
+              style={styles.input}
+              keyboardType="numeric"
+              value={amountToAdd}
+              onChangeText={setAmountToAdd}
+              placeholder="VD: 100000"
+            />
+            <View style={{ flexDirection: "row", marginTop: 20 }}>
+              <TouchableOpacity
+                style={[styles.modalButton, { backgroundColor: "#4CAF50" }]}
+                onPress={handleDeposit}
+              >
+                <Text style={{ color: "white" }}>Nạp</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  { backgroundColor: "#ccc", marginLeft: 10 },
+                ]}
+                onPress={() => {
+                  setModalVisible(false);
+                  setAmountToAdd("");
+                }}
+              >
+                <Text>Hủy</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <BottomNavigation />
     </SafeAreaView>
@@ -430,6 +499,32 @@ const styles = StyleSheet.create({
   menuArrow: {
     fontSize: 20,
     color: "#999",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
   },
 });
 
