@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const { log } = require("console");
 const sendEmail = require("../utils/sendEmail");
+const Wallet = require("../models/Wallet");
 exports.register = async (req, res) => {
   try {
     const { fullName, email, password, phone, address, image } = req.body;
@@ -49,6 +50,11 @@ exports.register = async (req, res) => {
     });
 
     await Users.save();
+
+    await Wallet.create({
+      userId: Users._id,
+      balance: 0,
+    });
 
     res.status(201).json({ Users });
   } catch (err) {

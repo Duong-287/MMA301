@@ -17,6 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 import { createCourt, getCourtById, updateCourt } from "../../services/court";
 import { uploadMultipleImages } from "../../services/upload";
 import { useAuth } from "../../context/AuthContext";
+import { API_URL } from "../../utils/config";
 
 const EditCourtScreen = ({ route, navigation }) => {
   const { courtId, isNewCourt = false } = route?.params || {};
@@ -391,9 +392,9 @@ const EditCourtScreen = ({ route, navigation }) => {
         serviceFee: Number.parseInt(courtData.serviceFee) || 0,
         status: courtData.status,
         images: courtData.images,
-        facilities: courtData.facilities,
-        rules: courtData.rules,
-        policies: courtData.policies,
+        facilities: JSON.stringify(courtData.facilities),
+        rules: JSON.stringify(courtData.rules),
+        policies: JSON.stringify(courtData.policies),
         latitude: courtData.latitude,
         longitude: courtData.longitude,
       };
@@ -587,7 +588,7 @@ const EditCourtScreen = ({ route, navigation }) => {
                 <View key={index} style={styles.imageContainer}>
                   <Image
                     source={{
-                      uri: `http://192.168.1.18:3000/uploads/${imageUrl}`,
+                      uri: `${API_URL}/uploads/${imageUrl}`,
                     }}
                     style={styles.courtImage}
                   />

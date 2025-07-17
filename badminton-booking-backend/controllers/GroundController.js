@@ -63,6 +63,12 @@ const createGround = async (req, res) => {
 
     const allImages = [...parsedImages, ...newImages];
 
+    const parsedFacilities =
+      typeof facilities === "string" ? JSON.parse(facilities) : facilities;
+    const parsedRules = typeof rules === "string" ? JSON.parse(rules) : rules;
+    const parsedPolicies =
+      typeof policies === "string" ? JSON.parse(policies) : policies;
+
     const newCourt = await Court.create({
       name,
       address,
@@ -74,9 +80,9 @@ const createGround = async (req, res) => {
       serviceFee,
       status,
       description,
-      facilities,
-      rules,
-      policies,
+      facilities: parsedFacilities || [],
+      rules: parsedRules || [],
+      policies: parsedPolicies || [],
       ownerId,
       images: allImages,
     });
@@ -95,6 +101,24 @@ const createGround = async (req, res) => {
     });
 
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getAllGroundsByOwner = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const listCourt = await Court.find({ ownerId: userId }); // đúng cú pháp
+
+    return res.status(200).json({
+      success: true,
+      data: listCourt,
+    });
+  } catch (error) {
+    console.error("Error getting courts by owner:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
   }
 };
 
@@ -178,7 +202,6 @@ const updateGround = async (req, res) => {
 const updateGroundStatus = async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
-
   try {
     const court = await Court.findById(id);
     if (!court) {
@@ -224,6 +247,7 @@ const getActiveGrounds = async (req, res) => {
 };
 
 module.exports = {
+  getAllGroundsByOwner,
   getAllGrounds,
   getGroundById,
   createGround,

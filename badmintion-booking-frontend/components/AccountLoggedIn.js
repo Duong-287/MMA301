@@ -7,10 +7,12 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
 import BottomNavigation from "./BottomNavigation";
+import { addMoneyToWallet, getCustomerWallet } from "../services/wallet";
 
 const AccountLoggedIn = ({
   userName,
@@ -19,7 +21,6 @@ const AccountLoggedIn = ({
   onCalendarPress,
   onProfilePress,
   onPasswordPress,
-  onVoucherPress,
   onMembershipPress,
   onBookingHistoryPress,
   onAppInfoPress,
@@ -27,53 +28,25 @@ const AccountLoggedIn = ({
   onLanguagePress,
   onSettingsPress,
   onLogoutPress,
+  onWalletPress,
 }) => {
-  const [wallet, setWallet] = useState(null);
-
-  useEffect(() => {
-    const fetchWallet = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token"); 
-        const res = await axios.get("http://localhost:5000/api/wallet", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setWallet(res.data.wallet);
-      } catch (error) {
-        console.error("Error fetching wallet:", error);
-      }
-    };
-
-    fetchWallet();
-  }, []);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
-
-      <ScrollView
-        style={styles.scrollContainer}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView style={styles.scrollContainer}>
         <View style={styles.headerBackground}>
           <View style={styles.headerOverlay}>
             <View style={styles.headerContent}>
+              {/* Header Actions */}
               <View style={styles.topActions}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onNotificationPress}
-                >
+                <TouchableOpacity onPress={onNotificationPress}>
                   <View
                     style={[styles.actionIcon, { backgroundColor: "#4CAF50" }]}
                   >
                     <Text style={styles.actionIconText}>🔔</Text>
                   </View>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={onCalendarPress}
-                >
+                <TouchableOpacity onPress={onCalendarPress}>
                   <View
                     style={[styles.actionIcon, { backgroundColor: "#FFC107" }]}
                   >
@@ -82,31 +55,15 @@ const AccountLoggedIn = ({
                 </TouchableOpacity>
               </View>
 
+              {/* Avatar + Username */}
               <View style={styles.avatarContainer}>
                 <View style={styles.userAvatar}>
                   <Text style={styles.userInitial}>{userInitial}</Text>
                 </View>
               </View>
-
               <Text style={styles.userName}>{userName}</Text>
 
-              {/* Hiển thị số dư ví */}
-              {wallet && (
-                <View style={{ marginTop: 10, alignItems: "center" }}>
-                  <Text style={{ fontSize: 16, color: "#555" }}>Số dư ví:</Text>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: "#2E7D32",
-                    }}
-                  >
-                    {wallet.balance.toLocaleString("vi-VN")} đ
-                  </Text>
-                </View>
-              )}
-
-              {/* Các hành động nhanh */}
+              {/* Các nút hành động nhanh */}
               <View style={styles.quickActionsContainer}>
                 <TouchableOpacity
                   style={styles.quickAction}
@@ -130,12 +87,12 @@ const AccountLoggedIn = ({
 
                 <TouchableOpacity
                   style={styles.quickAction}
-                  onPress={onVoucherPress}
+                  onPress={onWalletPress}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Text style={styles.quickActionEmoji}>🎁</Text>
+                    <Text style={styles.quickActionEmoji}>💰</Text>
                   </View>
-                  <Text style={styles.quickActionText}>Voucher</Text>
+                  <Text style={styles.quickActionText}>Ví</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -152,7 +109,7 @@ const AccountLoggedIn = ({
           </View>
         </View>
 
-        {/* Nội dung menu */}
+        {/* Menu */}
         <View style={styles.menuContent}>
           <View style={styles.menuSection}>
             <Text style={styles.sectionTitle}>Hoạt động</Text>
@@ -430,6 +387,32 @@ const styles = StyleSheet.create({
   menuArrow: {
     fontSize: 20,
     color: "#999",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    elevation: 5,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 5,
+    padding: 10,
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 5,
+    alignItems: "center",
   },
 });
 

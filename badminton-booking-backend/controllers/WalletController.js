@@ -1,3 +1,4 @@
+const Transaction = require("../models/Transaction");
 const Wallet = require("../models/Wallet");
 
 const getWallet = async (req, res) => {
@@ -33,8 +34,17 @@ const depositMoney = async (req, res) => {
       wallet = new Wallet({ userId, balance: 0 });
       await wallet.save();
     }
-
+    // Nạp tiền
     await wallet.deposit(amount);
+
+    // Ghi lại transaction
+    const transaction = new Transaction({
+      walletId: wallet._id,
+      type: "deposit",
+      amount: amount,
+      description: `Nạp tiền vào ví (+${amount} VND)`,
+    });
+    await transaction.save();
     return res.status(200).json({
       message: "Deposit successful",
       balance: wallet.balance,

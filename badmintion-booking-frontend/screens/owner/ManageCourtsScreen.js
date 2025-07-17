@@ -1,4 +1,3 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import {
@@ -20,6 +19,7 @@ import {
   getCourtsByOwner,
   updateCourtStatus,
 } from "../../services/court";
+import { API_URL } from "../../utils/config";
 
 const ManageCourtsScreen = ({ navigation, route }) => {
   const { ownerId } = route?.params || {};
@@ -182,7 +182,7 @@ const ManageCourtsScreen = ({ navigation, route }) => {
             {court.images.slice(0, 4).map((imageUrl, index) => (
               <Image
                 key={index}
-                source={{ uri: `http://192.168.1.18:3000/uploads/${imageUrl}` }}
+                source={{ uri: `${API_URL}/uploads/${imageUrl}` }}
                 style={styles.courtImage}
               />
             ))}
