@@ -11,14 +11,15 @@ import {
   Alert,
   RefreshControl,
 } from "react-native";
+import { getHistoryBooking } from "../../services/booking";
 
 const BookingHistoryScreen = ({ navigation, route }) => {
-  const { customerId } = route?.params || { customerId: "customer123" }; // Default for testing
+  const { customerId } = route?.params || { customerId: "customer123" };
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("all"); // all, pending, confirmed, completed, cancelled
+  const [selectedFilter, setSelectedFilter] = useState("all");
 
   useEffect(() => {
     loadBookingHistory();
@@ -28,56 +29,26 @@ const BookingHistoryScreen = ({ navigation, route }) => {
     try {
       setLoading(true);
 
-      // Mock API call - replace with actual API
-      const mockBookings = [
-        {
-          _id: "1",
-          courtName: "Sân cầu lông A1",
-          date: "2024-01-15",
-          startTime: "08:00",
-          endTime: "09:00",
-          status: "confirmed",
-          totalAmount: 100000,
-          customerName: "Nguyễn Văn A",
-          customerPhone: "0123456789",
-          createdAt: "2024-01-10T10:00:00Z",
-        },
-        {
-          _id: "2",
-          courtName: "Sân cầu lông B2",
-          date: "2024-01-20",
-          startTime: "14:00",
-          endTime: "15:00",
-          status: "pending",
-          totalAmount: 120000,
-          customerName: "Nguyễn Văn A",
-          customerPhone: "0123456789",
-          createdAt: "2024-01-18T15:30:00Z",
-        },
-        {
-          _id: "3",
-          courtName: "Sân cầu lông C3",
-          date: "2024-01-05",
-          startTime: "18:00",
-          endTime: "19:00",
-          status: "completed",
-          totalAmount: 90000,
-          customerName: "Nguyễn Văn A",
-          customerPhone: "0123456789",
-          createdAt: "2024-01-03T09:15:00Z",
-        },
-      ];
+      const result = await getHistoryBooking();
 
-      let filteredBookings = mockBookings;
+      if (!result.success) {
+        Alert.alert("Lỗi", result.message || "Không thể tải lịch sử đặt sân.");
+        return;
+      }
+
+      let apiBookings = result.data?.bookings || [];
+
+      console.log("Bookings nhận về:", apiBookings);
+      // Nếu muốn lọc theo trạng thái (confirmed, pending, completed,...)
       if (selectedFilter !== "all") {
-        filteredBookings = mockBookings.filter(
+        apiBookings = apiBookings.filter(
           (booking) => booking.status === selectedFilter
         );
       }
-
-      setBookings(filteredBookings);
+      console.log(apiBookings);
+      setBookings(apiBookings);
     } catch (error) {
-      Alert.alert("Lỗi", error.message);
+      Alert.alert("Lỗi", error.message || "Không thể tải lịch sử đặt sân.");
     } finally {
       setLoading(false);
     }

@@ -13,20 +13,21 @@ import {
   Modal,
   Platform,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { createBooking } from "../../services/booking";
 import { getCourtById } from "../../services/court";
-import { bookingAPI } from "../../services/booking";
-
+import { getUserProfile } from "../../services/customer";
+import moment from "moment-timezone";
 const BookingScreen = ({ navigation, route }) => {
-  const { courtId, selectedDate } = route?.params || {};
-  console.log("📌 Route params:", route?.params);
-  console.log("📌 courtId:", courtId);
+  const { courtId } = route?.params || {};
 
   const [courts, setCourts] = useState([]);
   const [selectedCourt, setSelectedCourt] = useState(null);
   const [bookingDate, setBookingDate] = useState(
     selectedDate ? new Date(selectedDate) : new Date()
   );
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,91 +42,78 @@ const BookingScreen = ({ navigation, route }) => {
 
   useEffect(() => {
     loadCourts();
-    console.log("🔄 Đang load thông tin sân...");
+    loadCustomerInfo();
   }, []);
 
   useEffect(() => {
-    console.log(
-      "📣 useEffect triggered - selectedCourt:",
-      selectedCourt,
-      "bookingDate:",
-      bookingDate
-    );
     if (selectedCourt && bookingDate) {
       loadAvailableSlots();
     }
   }, [selectedCourt, bookingDate]);
 
+  // Hiển thị thông tin sân cầu
   const loadCourts = async () => {
     try {
       setLoading(true);
-      let courtList = [];
 
-      if (courtId) {
-        const response = await getCourtById(courtId);
-        console.log("📌 API getCourtById response:", response);
+      const res = await getCourtById(courtId);
 
-        if (response.success) {
-          courtList = [response.data.court];
-        }
+      if (!res.success) {
+        Alert.alert("Lỗi", res.message || "Không thể tải dữ liệu sân.");
+        return;
       }
 
-      const activeCourts = courtList.filter(
-        (court) => court.status === "active"
-      );
-      console.log("📌 Active courts:", activeCourts);
+      const court = res.data.court || res.data;
 
-      setCourts(activeCourts);
-
-      if (courtId) {
-        const court = activeCourts.find((c) => c._id === courtId);
-        if (court) {
-          console.log("📌 Selected court:", court);
-          setSelectedCourt(court);
-          setTimeout(() => loadAvailableSlots(), 0);
-        }
-      } else if (activeCourts.length > 0) {
-        setSelectedCourt(activeCourts[0]);
+      if (!court || court.status !== "active") {
+        Alert.alert("Thông báo", "Sân không tồn tại hoặc đã bị vô hiệu.");
+        return;
       }
+
+      setCourts([court]);
+      setSelectedCourt(court);
+
+      setTimeout(() => loadAvailableSlots(), 0);
     } catch (error) {
-      console.log("❌ Lỗi khi load sân:", error);
-      Alert.alert("Lỗi", error.message);
+      console.error("Lỗi tải sân:", error);
+      Alert.alert("Lỗi", "Đã xảy ra lỗi khi tải sân.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Lấy thông tin người dùng
+  const loadCustomerInfo = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) {
+      console.log("Chưa đăng nhập");
+      return;
+    }
+
+    const res = await getUserProfile();
+    if (res.success) {
+      const { fullName, email, phone } = res.data;
+      setCustomerInfo({
+        name: fullName || "",
+        phone: phone || "",
+        email: email || "",
+      });
+    } else {
+      Alert.alert("Lỗi", res.message);
+    }
+  };
+
   const loadAvailableSlots = async () => {
     if (!selectedCourt || !bookingDate) return;
-    console.log("📌 Bắt đầu loadAvailableSlots");
-    console.log("📌 Court:", selectedCourt);
-    console.log("📌 Ngày:", bookingDate);
-    try {
-      const response = await bookingAPI.getCourtSchedule(
-        selectedCourt._id,
-        bookingDate
-      );
-      console.log("📌 Load slots for:", selectedCourt.name, bookingDate);
-      if (response.success) {
-        const slots = generateTimeSlots(
-          selectedCourt.startTime,
-          selectedCourt.endTime
-        );
-        console.log("📌 Tất cả khung giờ có thể:", slots);
-        const schedule =
-          response.data[bookingDate.toISOString().split("T")[0]] || {};
-        console.log("📌 Lịch đặt sân hiện có:", schedule);
-        const availableSlots = slots.filter((slot) => {
-          const slotInfo = schedule[slot];
-          return !slotInfo || slotInfo.status === "available";
-        });
-        console.log("📌 Khung giờ còn trống:", availableSlots);
-        setAvailableSlots(availableSlots);
-      }
-    } catch (error) {
-      Alert.alert("Lỗi", error.message);
-      setAvailableSlots([]);
-    }
+
+    // 🔒 Fake slot trống
+    const slots = generateTimeSlots(
+      selectedCourt.startTime,
+      selectedCourt.endTime
+    );
+    const fakeTakenSlots = ["08:00", "10:00"];
+    const available = slots.filter((slot) => !fakeTakenSlots.includes(slot));
+    setAvailableSlots(available);
   };
 
   const generateTimeSlots = (startTime, endTime) => {
@@ -149,35 +137,42 @@ const BookingScreen = ({ navigation, route }) => {
       return;
     }
 
-    try {
-      const bookingData = {
-        courtId: selectedCourt._id,
-        date: bookingDate.toISOString().split("T")[0],
-        startTime: selectedSlot,
-        endTime: `${parseInt(selectedSlot.split(":")[0]) + 1}:00`,
-        customerName: customerInfo.name,
-        customerPhone: customerInfo.phone,
-        customerEmail: customerInfo.email,
-        totalAmount:
-          parseInt(selectedCourt.pricePerHour) +
-          parseInt(selectedCourt.serviceFee),
-      };
-      console.log("📤 Dữ liệu gửi booking:", bookingData);
-      const response = await bookingAPI.createBooking(bookingData);
-      console.log("✅ Booking thành công:", response);
-      if (response.success) {
-        Alert.alert("Thành công", "Đặt sân thành công!", [
-          {
-            text: "OK",
-            onPress: () => {
-              setShowBookingModal(false);
-              navigation.navigate("BookingHistory");
-            },
+    const dateStr = moment(selectedDate).format("YYYY-MM-DD");
+    const timeStr = selectedSlot;
+
+    // 👉 Dùng moment-timezone để tạo đúng giờ Việt Nam
+    const startMoment = moment.tz(
+      `${dateStr} ${timeStr}`,
+      "YYYY-MM-DD HH:mm",
+      "Asia/Ho_Chi_Minh"
+    );
+    const endMoment = startMoment.clone().add(1, "hour");
+    const localBookingDate = moment(bookingDate).format("YYYY-MM-DD");
+    const bookingData = {
+      courtId: selectedCourt._id,
+      bookingDate: localBookingDate,
+      startTime: startMoment.format(), // Hoặc format('YYYY-MM-DDTHH:mm:ss')
+      endTime: endMoment.format(),
+      name: customerInfo.name,
+      phone: customerInfo.phone,
+    };
+
+    console.log("Booking data:", bookingData);
+
+    const result = await createBooking(bookingData);
+
+    if (result.success) {
+      Alert.alert("Thành công", "Đặt sân thành công!", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowBookingModal(false);
+            navigation.navigate("BookingHistory");
           },
-        ]);
-      }
-    } catch (error) {
-      Alert.alert("Lỗi", error.message);
+        },
+      ]);
+    } else {
+      Alert.alert("Lỗi", result.message || "Đặt sân thất bại");
     }
   };
 
@@ -194,12 +189,12 @@ const BookingScreen = ({ navigation, route }) => {
     return amount?.toLocaleString("vi-VN") + " VNĐ";
   };
 
-  const onDateChange = (event, selectedDate) => {
+  const onDateChange = (event, date) => {
     if (Platform.OS === "android") {
       setShowDatePicker(false);
     }
-    if (selectedDate) {
-      setBookingDate(selectedDate);
+    if (date) {
+      setSelectedDate(date); // chỉ cần 1 biến thôi
     }
   };
 
@@ -224,7 +219,6 @@ const BookingScreen = ({ navigation, route }) => {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Court List */}
         <Text style={styles.sectionTitle}>Chọn sân</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {courts.map((court) => (
@@ -245,7 +239,6 @@ const BookingScreen = ({ navigation, route }) => {
           ))}
         </ScrollView>
 
-        {/* Date Picker */}
         <Text style={styles.sectionTitle}>Chọn ngày</Text>
         <TouchableOpacity
           style={styles.dateSelector}
@@ -262,8 +255,6 @@ const BookingScreen = ({ navigation, route }) => {
             onChange={onDateChange}
           />
         )}
-
-        {/* iOS Date Picker (hiển thị luôn trong giao diện) */}
         {Platform.OS === "ios" && (
           <DateTimePicker
             value={bookingDate}
@@ -274,7 +265,6 @@ const BookingScreen = ({ navigation, route }) => {
           />
         )}
 
-        {/* Slot Selection */}
         <Text style={styles.sectionTitle}>Khung giờ</Text>
         <View style={styles.slotsGrid}>
           {availableSlots.length > 0 ? (
@@ -302,12 +292,11 @@ const BookingScreen = ({ navigation, route }) => {
           )}
         </View>
 
-        {/* Booking Info */}
         {selectedCourt && selectedSlot && (
           <View style={{ marginTop: 20 }}>
             <Text style={styles.sectionTitle}>Thông tin đặt sân</Text>
             <Text>Sân: {selectedCourt.name}</Text>
-            <Text>Ngày: {formatDate(bookingDate)}</Text>
+            <Text>Ngày: {formatDate(selectedDate)}</Text>
             <Text>
               Giờ: {selectedSlot} - {parseInt(selectedSlot.split(":")[0]) + 1}
               :00
@@ -324,63 +313,68 @@ const BookingScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Book Button */}
         {selectedCourt && selectedSlot && (
           <TouchableOpacity
             style={styles.bookButton}
-            onPress={() => setShowBookingModal(true)}
+            onPress={async () => {
+              const token = await AsyncStorage.getItem("token");
+              if (!token) {
+                Alert.alert("Thông báo", "Bạn cần đăng nhập để đặt sân.", [
+                  {
+                    text: "Đăng nhập",
+                    onPress: () => navigation.navigate("Login"),
+                  },
+                  { text: "Hủy", style: "cancel" },
+                ]);
+                return;
+              }
+              setShowBookingModal(true);
+            }}
           >
             <Text style={styles.bookButtonText}>Đặt sân ngay</Text>
           </TouchableOpacity>
         )}
       </ScrollView>
 
-      {/* Modal */}
       <Modal visible={showBookingModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+        <SafeAreaView style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Thông tin khách hàng</Text>
+
             <TextInput
-              style={styles.textInput}
               placeholder="Họ và tên"
+              style={styles.input}
               value={customerInfo.name}
               onChangeText={(text) =>
                 setCustomerInfo({ ...customerInfo, name: text })
               }
             />
+
             <TextInput
-              style={styles.textInput}
               placeholder="Số điện thoại"
+              style={styles.input}
               value={customerInfo.phone}
               onChangeText={(text) =>
                 setCustomerInfo({ ...customerInfo, phone: text })
               }
               keyboardType="phone-pad"
             />
-            <TextInput
-              style={styles.textInput}
-              placeholder="Email"
-              value={customerInfo.email}
-              onChangeText={(text) =>
-                setCustomerInfo({ ...customerInfo, email: text })
-              }
-              keyboardType="email-address"
-            />
+
             <TouchableOpacity
               style={styles.confirmButton}
               onPress={handleBooking}
             >
               <Text style={styles.confirmButtonText}>Xác nhận đặt sân</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowBookingModal(false)}>
-              <Text
-                style={{ textAlign: "center", marginTop: 10, color: "red" }}
-              >
-                Hủy
-              </Text>
+
+            <TouchableOpacity
+              onPress={() => setShowBookingModal(false)}
+              style={styles.cancelButton}
+            >
+              <Text style={styles.cancelButtonText}>Hủy</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -435,6 +429,14 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 20,
+  },
+  confirmButton: {
+    backgroundColor: "#2E7D32",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: Platform.OS === "ios" ? 32 : 16, // tránh đè lên thanh gạt
   },
   sectionTitle: {
     fontSize: 18,
@@ -654,6 +656,56 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: "white",
     fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+  },
+
+  modalContent: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+
+  confirmButton: {
+    backgroundColor: "#2E7D32",
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+    marginBottom: Platform.OS === "ios" ? 32 : 16, // tránh che bởi thanh gạt
+  },
+
+  confirmButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  cancelButton: {
+    marginTop: 12,
+    alignItems: "center",
+  },
+  cancelButtonText: {
+    color: "red",
     fontWeight: "bold",
   },
 });

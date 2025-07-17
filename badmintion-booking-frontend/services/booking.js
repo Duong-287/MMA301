@@ -1,169 +1,81 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-
 import { API_URL } from "../utils/config";
 
-// Tạo axios instance với config chung
-const api = axios.create({
-  baseURL: API_URL,
-  timeout: 10000,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-// interceptor cho token async
-api.interceptors.request.use(
-  async (config) => {
+export const getBookingsByCourt = async (courtId) => {
+  try {
     const token = await AsyncStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+
+    const response = await axios.get(`${API_URL}/bookings/court/${courtId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.log("Lỗi lấy đặt sân theo ID sân:", error);
+    return { success: false, message: "Không thể lấy danh sách đặt sân." };
   }
-);
+};
+// services/booking.js
+export const createBooking = async (bookingData) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    const formData = new FormData();
 
-// Interceptor để handle response errors
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error("API Error:", error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
+    Object.entries(bookingData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        // Nếu là mảng (ví dụ: time), stringify lại
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
 
-// Booking API functions
-export const bookingAPI = {
-  // Lấy lịch trình của một sân theo ngày
-  getCourtSchedule: async (courtId, date) => {
-    try {
-      const response = await api.get(`/bookings/court/${courtId}/schedule`, {
-        // Format: YYYY-MM-DD
-        params: { date: date.toISOString().split("T")[0] },
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể lấy lịch trình sân"
-      );
-    }
-  },
-
-  // Lấy lịch trình của nhiều sân theo ngày
-  getCourtsSchedule: async (courtIds, date) => {
-    try {
-      const response = await api.post(`/bookings/courts/schedule`, {
-        courtIds,
-        date: date.toISOString().split("T")[0],
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể lấy lịch trình các sân"
-      );
-    }
-  },
-
-  // Lấy danh sách booking theo owner
-  getBookingsByOwner: async (ownerId, filters = {}) => {
-    try {
-      const response = await api.get(`/bookings/owner/${ownerId}`, {
-        params: filters,
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể lấy danh sách booking"
-      );
-    }
-  },
-
-  // Tạo booking mới
-  createBooking: async (bookingData) => {
-    try {
-      const response = await api.post("/bookings", bookingData);
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể tạo booking");
-    }
-  },
-
-  // Cập nhật trạng thái booking
-  updateBookingStatus: async (bookingId, status, reason = null) => {
-    try {
-      const response = await api.patch(`/bookings/${bookingId}/status`, {
-        status,
-        reason,
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể cập nhật trạng thái booking"
-      );
-    }
-  },
-
-  // Hủy booking
-  cancelBooking: async (bookingId, reason) => {
-    try {
-      const response = await api.patch(`/bookings/${bookingId}/cancel`, {
-        reason,
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.message || "Không thể hủy booking");
-    }
-  },
-
-  // Block/Unblock time slot
-  blockTimeSlot: async (courtId, date, startTime, endTime, reason) => {
-    try {
-      const response = await api.post("/bookings/block-slot", {
-        courtId,
-        date: date.toISOString().split("T")[0],
-        startTime,
-        endTime,
-        reason,
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể khóa slot thời gian"
-      );
-    }
-  },
-
-  // Unblock time slot
-  unblockTimeSlot: async (blockId) => {
-    try {
-      const response = await api.delete(`/bookings/block-slot/${blockId}`);
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể mở khóa slot thời gian"
-      );
-    }
-  },
-
-  // Lấy thống kê booking
-  getBookingStats: async (ownerId, startDate, endDate) => {
-    try {
-      const response = await api.get(`/bookings/stats/${ownerId}`, {
-        params: {
-          startDate: startDate.toISOString().split("T")[0],
-          endDate: endDate.toISOString().split("T")[0],
+    const response = await axios.post(
+      `${API_URL}/customer/bookings`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
         },
-      });
-      return response.data;
-    } catch (error) {
-      throw new Error(
-        error.response?.data?.message || "Không thể lấy thống kê booking"
-      );
-    }
-  },
+      }
+    );
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.log("Lỗi tạo đặt sân:", error?.response?.data || error.message);
+    return { success: false, message: "Không thể tạo đặt sân." };
+  }
 };
 
-export default bookingAPI;
+//history booking
+export const getHistoryBooking = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) {
+      return {
+        success: false,
+        message: "Vui lòng đăng nhập để xem lịch sử đặt sân.",
+      };
+    }
+
+    const response = await axios.get(`${API_URL}/customer/bookings`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.log("Lỗi lấy danh sách đặt sân:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Không thể lấy danh sách đặt sân.",
+    };
+  }
+};

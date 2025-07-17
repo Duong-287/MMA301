@@ -22,7 +22,7 @@ const AccountScreen = () => {
   };
 
   const handleBookingHistory = () => {
-    console.log("Navigate to booking history");
+    navigation.navigate("BookingHistory");
   };
 
   const handleAppInfo = () => {

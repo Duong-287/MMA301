@@ -1,15 +1,33 @@
 const Booking = require("../models/Booking");
 const Court = require("../models/Court");
 const Wallet = require("../models/Wallet");
-
+const moment = require("moment-timezone");
 const getBookingHistory = async (req, res) => {
   const userId = req.user.id;
+
   try {
-    const bookingHistory = await Booking.find({ customerId: userId });
-    return res.status(200).json({ Booking: bookingHistory });
+    // Lấy lịch sử booking của user, kèm theo populate để lấy tên sân
+    const bookingHistory = await Booking.find({ customerId: userId }).populate(
+      "courtId", // populate theo courtId
+      "name" // chỉ lấy trường name của sân
+    );
+
+    // Định dạng lại dữ liệu trước khi trả về
+    const formatted = bookingHistory.map((booking) => ({
+      _id: booking._id,
+      courtName: booking.courtId?.name || "N/A", // phòng trường hợp court bị xóa
+      bookingDate: booking.bookingDate,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      status: booking.status,
+      totalAmount: booking.totalPrice,
+    }));
+    console.log(formatted);
+    // Trả dữ liệu về frontend
+    return res.status(200).json({ bookings: formatted });
   } catch (err) {
-    console.log("Error at get booking history: " + err);
-    return res.status(500).json("Internal system error");
+    console.log("❌ Error at getBookingHistory:", err);
+    return res.status(500).json({ message: "Internal system error" });
   }
 };
 
@@ -69,38 +87,49 @@ const parseTimeToDecimal = (timeStr) => {
 
 const createBooking = async (req, res) => {
   const userId = req.user.id;
-  const timeNow = new Date();
   const { courtId, startTime, endTime } = req.body;
 
   try {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
+    const start = moment(startTime).tz("Asia/Ho_Chi_Minh").toDate();
+    const end = moment(endTime).tz("Asia/Ho_Chi_Minh").toDate();
+    const timeNow = moment().tz("Asia/Ho_Chi_Minh").toDate();
 
-    // Làm tròn về phút
-    start.setSeconds(0, 0);
-    end.setSeconds(0, 0);
-    timeNow.setSeconds(0, 0);
+    // Kiểm tra thời gian đặt
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    const nowMs = timeNow.getTime();
 
-    // Kiểm tra thời gian
-    if (!(start > timeNow && end > start)) {
+    if (startMs <= nowMs) {
       return res
         .status(400)
-        .json({ message: "Invalid start time or end time" });
+        .json({ message: "Start time must be in the future" });
+    }
+
+    if (endMs <= startMs) {
+      return res
+        .status(400)
+        .json({ message: "End time must be after start time" });
     }
 
     const totalHours = (end - start) / (1000 * 60 * 60);
 
     const court = await Court.findById(courtId);
-    if (!court) return res.status(404).json("Court not found");
-    /// 1. Parse giờ từ booking request
-    const startHour = start.getHours() + start.getMinutes() / 60;
+    if (!court) {
+      return res.status(404).json("Court not found");
+    }
+
+    const startHour = new Date(startTime).getUTCHours() + 7;
     const endHour = end.getHours() + end.getMinutes() / 60;
 
-    // 2. Parse giờ mở cửa - đóng cửa từ court
-    const openHour = parseTimeToDecimal(court.startTime); // từ "06:00"
-    const closeHour = parseTimeToDecimal(court.endTime); // từ "22:00"
+    if (startHour < 7 || startHour >= 22) {
+      return res
+        .status(400)
+        .json({ message: "You only can book from 07:00 to 22:00" });
+    }
 
-    // 3. So sánh điều kiện
+    const openHour = parseTimeToDecimal(court.startTime);
+    const closeHour = parseTimeToDecimal(court.endTime);
+
     if (startHour < openHour || endHour > closeHour) {
       return res.status(400).json({
         message: `You only can book from ${court.startTime} to ${court.endTime}`,
@@ -119,15 +148,12 @@ const createBooking = async (req, res) => {
     });
 
     const booked = await newBooking.save();
-
     if (!booked) {
       return res.status(500).json({ message: "Booking failed" });
     }
 
-    // Tìm ví và trừ tiền
-    const wallet = await Wallet.findOne({ userId: userId });
+    const wallet = await Wallet.findOne({ userId });
     if (!wallet) {
-      // Xoá booking nếu không có ví
       await Booking.findByIdAndDelete(booked._id);
       return res.status(404).json({ message: "Wallet not found" });
     }
@@ -135,11 +161,10 @@ const createBooking = async (req, res) => {
     try {
       await wallet.withdraw(booked.totalPrice);
     } catch (err) {
-      // Trường hợp không đủ tiền -> xoá booking
       await Booking.findByIdAndDelete(booked._id);
-      if (err.message.includes("Insufficient balance."))
-        return res.status(400).json({ message: err.message });
-      return res.status(400).json({ message: "Insufficient balance." });
+      return res
+        .status(400)
+        .json({ message: err.message || "Insufficient balance." });
     }
 
     return res.status(201).json({
@@ -148,12 +173,6 @@ const createBooking = async (req, res) => {
       newBalance: wallet.balance,
     });
   } catch (err) {
-    console.error("Error at create booking:", err.message);
-
-    if (err.message.includes("This time slot has been booked.")) {
-      return res.status(400).json({ message: err.message });
-    }
-
     return res.status(500).json({ message: "Internal server error" });
   }
 };
