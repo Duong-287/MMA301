@@ -21,7 +21,6 @@ const AccountLoggedIn = ({
   onCalendarPress,
   onProfilePress,
   onPasswordPress,
-  onVoucherPress,
   onMembershipPress,
   onBookingHistoryPress,
   onAppInfoPress,
@@ -29,47 +28,8 @@ const AccountLoggedIn = ({
   onLanguagePress,
   onSettingsPress,
   onLogoutPress,
+  onWalletPress,
 }) => {
-  const [wallet, setWallet] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [amountToAdd, setAmountToAdd] = useState("");
-
-  useEffect(() => {
-    const fetchWallet = async () => {
-      const result = await getCustomerWallet();
-      if (result.success) {
-        setWallet(result.data);
-      } else {
-        Alert.alert("Lỗi", result.message || "Không thể lấy ví");
-      }
-    };
-    fetchWallet();
-  }, []);
-
-  const handleDeposit = async () => {
-    const amount = parseInt(amountToAdd);
-    if (isNaN(amount) || amount <= 0) {
-      Alert.alert("Lỗi", "Vui lòng nhập số tiền hợp lệ");
-      return;
-    }
-
-    const result = await addMoneyToWallet(amount);
-    if (result.success) {
-      Alert.alert("Thành công", "Nạp tiền thành công");
-
-      // 🔁 Gọi lại API để lấy số dư ví mới nhất
-      const updatedWallet = await getCustomerWallet();
-      if (updatedWallet.success) {
-        setWallet(updatedWallet.data);
-      }
-
-      setModalVisible(false);
-      setAmountToAdd("");
-    } else {
-      Alert.alert("Thất bại", result.message || "Không thể nạp tiền");
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1B5E20" />
@@ -103,22 +63,6 @@ const AccountLoggedIn = ({
               </View>
               <Text style={styles.userName}>{userName}</Text>
 
-              {/* Số dư ví */}
-              {wallet && (
-                <View style={{ marginTop: 10, alignItems: "center" }}>
-                  <Text style={{ fontSize: 16, color: "#555" }}>Số dư ví:</Text>
-                  <Text
-                    style={{
-                      fontSize: 20,
-                      fontWeight: "bold",
-                      color: "#2E7D32",
-                    }}
-                  >
-                    {wallet.balance.toLocaleString("vi-VN")} đ
-                  </Text>
-                </View>
-              )}
-
               {/* Các nút hành động nhanh */}
               <View style={styles.quickActionsContainer}>
                 <TouchableOpacity
@@ -143,12 +87,12 @@ const AccountLoggedIn = ({
 
                 <TouchableOpacity
                   style={styles.quickAction}
-                  onPress={onVoucherPress}
+                  onPress={onWalletPress}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Text style={styles.quickActionEmoji}>🎁</Text>
+                    <Text style={styles.quickActionEmoji}>💰</Text>
                   </View>
-                  <Text style={styles.quickActionText}>Voucher</Text>
+                  <Text style={styles.quickActionText}>Ví</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -159,17 +103,6 @@ const AccountLoggedIn = ({
                     <Text style={styles.quickActionEmoji}>⭐</Text>
                   </View>
                   <Text style={styles.quickActionText}>Thành viên</Text>
-                </TouchableOpacity>
-
-                {/* Nút mở modal nạp tiền */}
-                <TouchableOpacity
-                  style={styles.quickAction}
-                  onPress={() => setModalVisible(true)}
-                >
-                  <View style={styles.quickActionIcon}>
-                    <Text style={styles.quickActionEmoji}>💵</Text>
-                  </View>
-                  <Text style={styles.quickActionText}>Nạp tiền</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -253,51 +186,6 @@ const AccountLoggedIn = ({
           </View>
         </View>
       </ScrollView>
-
-      {/* Modal nhập số tiền */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text
-              style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10 }}
-            >
-              Nhập số tiền muốn nạp (đ)
-            </Text>
-            <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={amountToAdd}
-              onChangeText={setAmountToAdd}
-              placeholder="VD: 100000"
-            />
-            <View style={{ flexDirection: "row", marginTop: 20 }}>
-              <TouchableOpacity
-                style={[styles.modalButton, { backgroundColor: "#4CAF50" }]}
-                onPress={handleDeposit}
-              >
-                <Text style={{ color: "white" }}>Nạp</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.modalButton,
-                  { backgroundColor: "#ccc", marginLeft: 10 },
-                ]}
-                onPress={() => {
-                  setModalVisible(false);
-                  setAmountToAdd("");
-                }}
-              >
-                <Text>Hủy</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <BottomNavigation />
     </SafeAreaView>

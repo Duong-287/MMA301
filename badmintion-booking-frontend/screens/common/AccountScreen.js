@@ -66,6 +66,11 @@ const AccountScreen = () => {
     console.log("Show settings");
   };
 
+  const handleWallet = () => {
+    console.log("Show wallet");
+    navigation.navigate("UserWallet");
+  };
+
   if (user) {
     return (
       <AccountLoggedIn
@@ -82,6 +87,7 @@ const AccountScreen = () => {
         onWhatsNewPress={handleWhatsNew}
         onLanguagePress={handleLanguage}
         onSettingsPress={handleSettings}
+        onWalletPress={handleWallet}
         onLogoutPress={handleLogout}
       />
     );

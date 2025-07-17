@@ -12,8 +12,11 @@ const {
   cancelBooking,
 } = require("../controllers/BookingController");
 const { addNewReviewToCourt, removeReviewById } = require("../controllers/ReviewController");
+const { getTransactions } = require("../controllers/Transactions");
 const router = express.Router();
 
+//lịch sử giao dịch
+router.get("/transaction",getTransactions);
 // Xem thông tin cá nhân
 router.get("/profile", getInformation);
 //Update thông tin cá nhân
@@ -36,5 +39,6 @@ router.delete("/bookings/:id", cancelBooking);
 router.post("/review/:courtId", addNewReviewToCourt);
 // remove review a court by id
 router.delete("/review/:id", removeReviewById);
+
 
 module.exports = router;

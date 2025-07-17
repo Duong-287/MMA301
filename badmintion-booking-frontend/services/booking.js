@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
-import { API_URL } from "../utils/config"; 
+import { API_URL } from "../utils/config";
 
 // Tạo axios instance với config chung
 const api = axios.create({
@@ -15,7 +15,7 @@ const api = axios.create({
 // interceptor cho token async
 api.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem("token"); 
+    const token = await AsyncStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,7 +41,8 @@ export const bookingAPI = {
   getCourtSchedule: async (courtId, date) => {
     try {
       const response = await api.get(`/bookings/court/${courtId}/schedule`, {
-        params: { date: date.toISOString().split("T")[0] }, // Format: YYYY-MM-DD
+        // Format: YYYY-MM-DD
+        params: { date: date.toISOString().split("T")[0] },
       });
       return response.data;
     } catch (error) {
